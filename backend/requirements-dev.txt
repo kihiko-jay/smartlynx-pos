@@ -1,0 +1,8 @@
+-r requirements.txt
+pytest==8.2.0
+pytest-asyncio==0.23.6
+pytest-cov==5.0.0
+coverage==7.5.0
+ruff==0.4.4
+pyright==1.1.369
+locust>=2.28.0

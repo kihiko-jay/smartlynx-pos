@@ -1,0 +1,3 @@
+import { useEffect, useState } from "react";
+import { procurementAPI, fmtKES } from "../../api/client";
+export default function SupplierPaymentList({onNew}){const [rows,setRows]=useState([]);useEffect(()=>{procurementAPI.listSupplierPayments().then(setRows).catch(()=>{});},[]);return <div><button onClick={onNew}>New Supplier Payment</button><table style={{width:"100%"}}><thead><tr><th>No</th><th>Supplier</th><th>Date</th><th>Amount</th><th>Method</th><th>Reference</th></tr></thead><tbody>{rows.map(r=><tr key={r.id}><td>{r.payment_number}</td><td>{r.supplier?.name||r.supplier_id}</td><td>{r.payment_date}</td><td>{fmtKES(r.amount)}</td><td>{r.payment_method}</td><td>{r.reference}</td></tr>)}</tbody></table></div>}

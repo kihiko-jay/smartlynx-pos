@@ -1,0 +1,3 @@
+import { useEffect, useState } from "react";
+import { accountingAPI, fmtKES } from "../../api/client";
+export default function ConsolidatedPLView(){const [data,setData]=useState(null);useEffect(()=>{accountingAPI.consolidatedPL().then(setData).catch(()=>{});},[]);if(!data)return <div>Loading consolidated P&L...</div>;return <table style={{width:"100%"}}><thead><tr><th>Store</th><th>Revenue</th><th>COGS</th><th>Gross Profit</th><th>Expenses</th><th>Net Profit</th></tr></thead><tbody>{(data.stores||[]).map(r=><tr key={r.store_id}><td>{r.store_id}</td><td>{fmtKES(r.revenue)}</td><td>{fmtKES(r.cogs)}</td><td>{fmtKES(r.gross_profit)}</td><td>{fmtKES(r.expenses)}</td><td>{fmtKES(r.net_profit)}</td></tr>)}</tbody></table>}
