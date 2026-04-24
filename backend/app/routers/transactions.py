@@ -27,7 +27,8 @@ from datetime import datetime, date, timezone, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 import uuid
 
-from app.core.deps import get_db, require_cashier, require_manager, get_current_employee
+from app.core.deps import get_db, require_cashier, require_manager, get_current_employee, require_role
+from app.models.employee import Role
 from app.models.employee import Role
 from app.core.datetime_utils import merchant_today, ensure_utc_datetime, utc_to_merchant_date
 from app.models.transaction import Transaction, TransactionItem, TransactionStatus, PaymentMethod, SyncStatus
@@ -192,7 +193,7 @@ def _compute_line_vat(line_subtotal: Decimal, product: Product) -> Decimal:
 def create_transaction(
     payload:          TransactionCreate,
     db:               Session  = Depends(get_db),
-    current:          Employee = Depends(require_cashier),
+    current:          Employee = Depends(require_role(Role.CASHIER)),
     idempotency_key:  Optional[str] = Header(None, alias="Idempotency-Key"),
 ):
     """
