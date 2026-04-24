@@ -381,7 +381,7 @@ export async function clearSession() {
 }
 
 export const authAPI = {
-  login: (email, password) => post("/auth/login", { email, password }),
+  login: (username, password) => post("/auth/login", { username, password }),
   logout: (refreshToken) => post("/auth/logout", refreshToken ? { refresh_token: refreshToken } : {}),
   register: (data) => post("/auth/register", data),
   forgotPassword: ({ email }) => post("/auth/forgot-password", { email }),
@@ -457,6 +457,7 @@ export const mpesaAPI = {
 };
 
 export const reportsAPI = {
+  // JSON endpoints
   zTape: (date) => get("/reports/z-tape", date ? { report_date: date } : {}),
   weekly: (date) => get("/reports/weekly", date ? { week_ending: date } : {}),
   vat: (month, year) => get("/reports/vat", { month, year }),
@@ -465,6 +466,28 @@ export const reportsAPI = {
   sales: (params) => get("/reports/z-tape", params),
   inventory: () => get("/reports/low-stock"),
   etims: () => get("/etims/pending"),
+  
+  // PDF download endpoints
+  downloadZtapePDF: (params) => {
+    const queryParams = params ? new URLSearchParams(params).toString() : "";
+    return getBlob(`/reports/z-tape/pdf${queryParams ? `?${queryParams}` : ''}`);
+  },
+  downloadWeeklyPDF: (params) => {
+    const queryParams = params ? new URLSearchParams(params).toString() : "";
+    return getBlob(`/reports/weekly/pdf${queryParams ? `?${queryParams}` : ''}`);
+  },
+  downloadVatPDF: (params) => {
+    const queryParams = params ? new URLSearchParams(params).toString() : "";
+    return getBlob(`/reports/vat/pdf${queryParams ? `?${queryParams}` : ''}`);
+  },
+  downloadTopProductsPDF: (params) => {
+    const queryParams = params ? new URLSearchParams(params).toString() : "";
+    return getBlob(`/reports/top-products/pdf${queryParams ? `?${queryParams}` : ''}`);
+  },
+  downloadLowStockPDF: (params) => {
+    const queryParams = params ? new URLSearchParams(params).toString() : "";
+    return getBlob(`/reports/low-stock/pdf${queryParams ? `?${queryParams}` : ''}`);
+  },
 };
 
 export const etimsAPI = {
@@ -512,6 +535,7 @@ export const expensesAPI = {
 
 export const cashSessionsAPI = {
   list: (params) => get("/cash-sessions", params),
+  current: () => get("/cash-sessions/current"),
   open: (data) => post("/cash-sessions/open", data),
   close: (id, data) => post(`/cash-sessions/${id}/close`, data),
   getById: (id) => get(`/cash-sessions/${id}`),
@@ -570,8 +594,23 @@ export const platformAPI = {
 
 export const employeesAPI = {
   listEmployees: () => get("/employees"),
-  createEmployee: (data) => post("/employees", data),
-  updateEmployee: (id, data) => put(`/employees/${id}`, data),
+  createEmployee: (data) => post("/employees", {
+    full_name: data.full_name,
+    username: data.username,
+    email: data.email,
+    phone: data.phone,
+    role: data.role,
+    terminal_id: data.terminal_id,
+    password: data.password,
+  }),
+  updateEmployee: (id, data) => put(`/employees/${id}`, {
+    full_name: data.full_name,
+    username: data.username,
+    email: data.email,
+    phone: data.phone,
+    role: data.role,
+    terminal_id: data.terminal_id,
+  }),
   deactivateEmployee: (id) => del(`/employees/${id}`),
   resetPassword: (id) => post(`/employees/${id}/reset-password`, {}),
 };

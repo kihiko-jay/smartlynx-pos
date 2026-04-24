@@ -8,13 +8,13 @@ Problem:
   the event 75% of the time.
 
 Solution:
-  Introduce a Redis pub/sub channel ("dukapos:ws:events"). Any worker can
+  Introduce a Redis pub/sub channel ("smartlynx:ws:events"). Any worker can
   PUBLISH an event. A background subscriber task in every worker SUBSCRIBES and
   dispatches to locally-connected terminals.
 
 Architecture:
   [Worker A — receives M-Pesa callback]
-       ↓  PUBLISH "dukapos:ws:events" → {"terminal_id": "T01", "event": {...}}
+       ↓  PUBLISH "smartlynx:ws:events" → {"terminal_id": "T01", "event": {...}}
   [Redis]
        ↓  fan-out to all subscribers
   [Worker B — owns WebSocket for T01]
@@ -41,9 +41,9 @@ import json
 import logging
 from typing import Optional, Any
 
-logger = logging.getLogger("dukapos.pubsub")
+logger = logging.getLogger("smartlynx.pubsub")
 
-_CHANNEL = "dukapos:ws:events"
+_CHANNEL = "smartlynx:ws:events"
 
 
 class WebSocketPubSub:

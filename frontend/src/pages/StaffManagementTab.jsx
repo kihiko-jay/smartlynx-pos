@@ -32,6 +32,7 @@ export default function StaffManagementTab() {
   // Form state
   const [formData, setFormData] = useState({
     full_name: "",
+    username: "",  // NEW: username field
     email: "",
     phone: "",
     role: "cashier",
@@ -67,6 +68,21 @@ export default function StaffManagementTab() {
   const handleCreateEmployee = async (e) => {
     e.preventDefault();
     try {
+      // Validate username
+      if (!formData.username) {
+        setError("Username is required");
+        return;
+      }
+      if (formData.username.length < 3) {
+        setError("Username must be at least 3 characters");
+        return;
+      }
+      if (formData.username.includes(' ')) {
+        setError("Username cannot contain spaces");
+        return;
+      }
+
+      // Validate password if provided
       if (formData.password) {
         const hasUpper = /[A-Z]/.test(formData.password);
         const hasLower = /[a-z]/.test(formData.password);
@@ -81,15 +97,21 @@ export default function StaffManagementTab() {
         setError("Password and confirm password do not match.");
         return;
       }
+      
       const payload = { ...formData };
       delete payload.confirm_password;
       if (!payload.password) delete payload.password;
+      
       const response = await employeesAPI.createEmployee(payload);
       if (response?.temporary_password) {
-        alert(`Employee created with temporary password: ${response.temporary_password}`);
+        alert(`Employee created with username: ${formData.username}\nTemporary password: ${response.temporary_password}`);
+      } else {
+        alert(`Employee "${formData.username}" created successfully`);
       }
+      
       setFormData({
         full_name: "",
+        username: "",
         email: "",
         phone: "",
         role: "cashier",
@@ -107,10 +129,17 @@ export default function StaffManagementTab() {
   const handleUpdateEmployee = async (e) => {
     e.preventDefault();
     try {
+      // Validate username if changed
+      if (formData.username && formData.username.includes(' ')) {
+        setError("Username cannot contain spaces");
+        return;
+      }
+      
       await employeesAPI.updateEmployee(editingEmployee.id, formData);
       setEditingEmployee(null);
       setFormData({
         full_name: "",
+        username: "",
         email: "",
         phone: "",
         role: "cashier",
@@ -150,6 +179,7 @@ export default function StaffManagementTab() {
     setEditingEmployee(employee);
     setFormData({
       full_name: employee.full_name,
+      username: employee.username || employee.user_name || "",
       email: employee.email,
       phone: employee.phone || "",
       role: employee.role,
@@ -161,6 +191,7 @@ export default function StaffManagementTab() {
     setEditingEmployee(null);
     setFormData({
       full_name: "",
+      username: "",
       email: "",
       phone: "",
       role: "cashier",
@@ -251,6 +282,28 @@ export default function StaffManagementTab() {
                       boxSizing: "border-box"
                     }}
                   />
+                </div>
+                <div>
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "bold" }}>
+                    Username * <span style={{ fontSize: "0.8rem", color: "#6c757d" }}>(used for login)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.username}
+                    onChange={(e) => setFormData({...formData, username: e.target.value.toLowerCase().replace(/\s/g, '')})}
+                    required
+                    placeholder="e.g., john_doe"
+                    style={{
+                      width: "100%",
+                      padding: "0.5rem",
+                      border: "1px solid #ccc",
+                      borderRadius: "4px",
+                      boxSizing: "border-box"
+                    }}
+                  />
+                  <small style={{ color: "#6c757d" }}>
+                    Unique identifier for login (lowercase, no spaces)
+                  </small>
                 </div>
                 <div>
                   <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "bold" }}>
@@ -430,6 +483,24 @@ export default function StaffManagementTab() {
                 </div>
                 <div>
                   <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "bold" }}>
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.username}
+                    onChange={(e) => setFormData({...formData, username: e.target.value.toLowerCase().replace(/\s/g, '')})}
+                    placeholder="e.g., john_doe"
+                    style={{
+                      width: "100%",
+                      padding: "0.5rem",
+                      border: "1px solid #ccc",
+                      borderRadius: "4px",
+                      boxSizing: "border-box"
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "bold" }}>
                     Email *
                   </label>
                   <input
@@ -550,6 +621,7 @@ export default function StaffManagementTab() {
             <thead>
               <tr style={{ backgroundColor: "#f8f9fa" }}>
                 <th style={{ padding: "0.75rem", textAlign: "left", borderBottom: "1px solid #dee2e6", fontWeight: "bold" }}>Name</th>
+                <th style={{ padding: "0.75rem", textAlign: "left", borderBottom: "1px solid #dee2e6", fontWeight: "bold" }}>Username</th>
                 <th style={{ padding: "0.75rem", textAlign: "left", borderBottom: "1px solid #dee2e6", fontWeight: "bold" }}>Email</th>
                 {!isMobile && <th style={{ padding: "0.75rem", textAlign: "left", borderBottom: "1px solid #dee2e6", fontWeight: "bold" }}>Phone</th>}
                 <th style={{ padding: "0.75rem", textAlign: "left", borderBottom: "1px solid #dee2e6", fontWeight: "bold" }}>Role</th>
@@ -562,13 +634,18 @@ export default function StaffManagementTab() {
               {employees.map((employee) => (
                 <tr key={employee.id} style={{ borderBottom: "1px solid #f1f3f4" }}>
                   <td style={{ padding: "0.75rem" }}>{employee.full_name}</td>
+                  <td style={{ padding: "0.75rem" }}>
+                    <code style={{ backgroundColor: "#f4f4f4", padding: "2px 4px", borderRadius: "3px" }}>
+                      {employee.username || employee.user_name || "-"}
+                    </code>
+                  </td>
                   <td style={{ padding: "0.75rem" }}>{employee.email}</td>
                   {!isMobile && <td style={{ padding: "0.75rem" }}>{employee.phone || "-"}</td>}
                   <td style={{ padding: "0.75rem" }}>
                     <span style={{
-                      backgroundColor: employee.role === "ADMIN" ? "#dc3545" :
-                                       employee.role === "MANAGER" ? "#ffc107" :
-                                       employee.role === "SUPERVISOR" ? "#17a2b8" : "#28a745",
+                      backgroundColor: employee.role === "admin" ? "#dc3545" :
+                                       employee.role === "manager" ? "#ffc107" :
+                                       employee.role === "supervisor" ? "#17a2b8" : "#28a745",
                       color: "white",
                       padding: "0.25rem 0.5rem",
                       borderRadius: "12px",
@@ -654,7 +731,7 @@ export default function StaffManagementTab() {
               ))}
               {employees.length === 0 && (
                 <tr>
-                  <td colSpan={isMobile ? 5 : 7} style={{ padding: "2rem", textAlign: "center", color: "#6c757d" }}>
+                  <td colSpan={isMobile ? 7 : 8} style={{ padding: "2rem", textAlign: "center", color: "#6c757d" }}>
                     No employees found. Create your first employee to get started.
                   </td>
                 </tr>

@@ -1,5 +1,5 @@
 """
-Accounting models — double-entry bookkeeping engine for DukaPOS.
+Accounting models — double-entry bookkeeping engine for Smartlynx.
 
 Architecture:
   Account        — chart of accounts (one set per store, seeded with Kenyan defaults)

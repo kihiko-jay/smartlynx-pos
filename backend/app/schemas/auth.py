@@ -1,10 +1,10 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from app.models.employee import Role
 
 
 class LoginRequest(BaseModel):
-    email: str
+    username: str = Field(..., description="Username or email address")  # Changed from 'email'
     password: str
 
 
@@ -22,6 +22,7 @@ class TokenOut(BaseModel):
 
 class EmployeeCreate(BaseModel):
     full_name: str
+    username: str = Field(..., description="Unique username for login")  # NEW
     email: str
     phone: Optional[str] = None
     pin: Optional[str] = None
@@ -41,6 +42,7 @@ class PinVerify(BaseModel):
 class EmployeeOut(BaseModel):
     id: int
     full_name: str
+    username: str  # NEW
     email: str
     phone: Optional[str]
     role: Role

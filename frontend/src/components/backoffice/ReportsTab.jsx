@@ -98,36 +98,66 @@ export default function ReportsTab() {
   const exportCsv = () => exportBlob(`smartlynx-${activeReport}.csv`, rowsToCsv(rows), "text/csv;charset=utf-8");
 
   const exportPdf = async () => {
-    try {
-      const reportTypeMap = {
-        ztape: "z-tape",
-        weekly: "weekly",
-        top: "top-products",
-        inventory: "low-stock",
-        vat: "vat"
-      };
-      const reportType = reportTypeMap[activeReport];
-      const now = new Date();
-      
-      let url = `/api/v1/reports/${reportType}/pdf?download=true`;
-      if (activeReport === "vat") {
-        url += `&month=${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-      }
-      
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Failed to generate PDF");
-      
-      const blob = await response.blob();
-      const pdfUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = pdfUrl;
-      link.download = `smartlynx-${activeReport}-${new Date().toISOString().split("T")[0]}.pdf`;
-      link.click();
-      URL.revokeObjectURL(pdfUrl);
-    } catch (err) {
-      setError(`PDF export failed: ${err.message}`);
+  try {
+    setError("");
+    const reportTypeMap = {
+      ztape: "ztape",
+      weekly: "weekly",
+      top: "top-products",
+      inventory: "low-stock",
+      vat: "vat"
+    };
+    const reportType = reportTypeMap[activeReport];
+    const now = new Date();
+    
+    let params = { download: true };
+    
+    // Add date parameters for reports that need them
+    if (activeReport === "vat") {
+      params.month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    } else if (activeReport === "ztape") {
+      params.report_date = now.toISOString().split("T")[0];
     }
-  };
+    
+    let result;
+    switch (activeReport) {
+      case "ztape":
+        result = await reportsAPI.downloadZtapePDF(params);
+        break;
+      case "weekly":
+        result = await reportsAPI.downloadWeeklyPDF(params);
+        break;
+      case "vat":
+        result = await reportsAPI.downloadVatPDF(params);
+        break;
+      case "top":
+        result = await reportsAPI.downloadTopProductsPDF(params);
+        break;
+      case "inventory":
+        result = await reportsAPI.downloadLowStockPDF(params);
+        break;
+      default:
+        result = await reportsAPI.downloadZtapePDF(params);
+    }
+    
+    if (!result?.blob) {
+      throw new Error("No PDF data returned");
+    }
+    
+    const blobUrl = URL.createObjectURL(result.blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = `smartlynx-${activeReport}-${new Date().toISOString().split("T")[0]}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up the blob URL after download
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+  } catch (err) {
+    setError(`PDF export failed: ${err.message}`);
+  }
+};
 
   return (
     <div style={{ display: "grid", gap: isMobile ? 12 : 16 }}>

@@ -1,5 +1,5 @@
 """
-Structured logging configuration for DukaPOS backend.
+Structured logging configuration for Smartlynx backend.
 
 Outputs JSON logs in production (easy ingestion by Datadog, CloudWatch, etc.)
 and pretty human-readable logs in development.

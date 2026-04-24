@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 import uuid
@@ -22,43 +21,127 @@ class CashSessionOpen(BaseModel):
 
 
 class CashSessionClose(BaseModel):
-    counted_cash: Decimal = Field(..., ge=0)
+    payment_counts: dict = Field(..., description="Counted amounts by payment method")
+    total_counted: Decimal = Field(..., ge=0, description="Total of all counted amounts")
     notes: Optional[str] = None
 
 
 @router.post("/open", dependencies=[Depends(require_cashier)])
-def open_cash_session(payload: CashSessionOpen, db: Session = Depends(get_db), current: Employee = Depends(get_current_employee)):
-    existing = db.query(CashSession).filter(CashSession.store_id == current.store_id, CashSession.cashier_id == current.id, CashSession.terminal_id == payload.terminal_id, CashSession.status == 'open').first()
+def open_cash_session(
+    payload: CashSessionOpen, 
+    db: Session = Depends(get_db), 
+    current: Employee = Depends(get_current_employee)
+):
+    # Use the terminal_id from payload or from employee's current terminal
+    terminal_id = payload.terminal_id or current.terminal_id or "T01"
+    
+    # Check for existing open session
+    existing = db.query(CashSession).filter(
+        CashSession.store_id == current.store_id,
+        CashSession.cashier_id == current.id,
+        CashSession.terminal_id == terminal_id,
+        CashSession.status == 'open'
+    ).first()
+    
     if existing:
         raise HTTPException(400, 'Cashier already has an open session on this terminal')
-    row = CashSession(store_id=current.store_id, cashier_id=current.id, terminal_id=payload.terminal_id, session_number=f"CS-{uuid.uuid4().hex[:8].upper()}", opening_float=payload.opening_float, expected_cash=payload.opening_float, status='open', opened_by=current.id, notes=payload.notes)
+    
+    # Create new cash session
+    row = CashSession(
+        store_id=current.store_id,
+        cashier_id=current.id,
+        terminal_id=terminal_id,
+        session_number=f"CS-{uuid.uuid4().hex[:8].upper()}",
+        opening_float=payload.opening_float,
+        expected_cash=payload.opening_float,
+        status='open',
+        opened_by=current.id,
+        notes=payload.notes
+    )
     db.add(row)
     db.flush()
+    
     try:
         post_cash_session_open(db, row)
     except (ValueError, Exception) as e:
-        # Accounting system may not be fully initialized; allow session creation anyway
         print(f"Warning: Failed to post cash session accounting entry: {e}")
-    db.commit(); db.refresh(row)
+    
+    db.commit()
+    db.refresh(row)
     return row
 
 
 @router.get("", dependencies=[Depends(require_cashier)])
-def list_cash_sessions(db: Session = Depends(get_db), current: Employee = Depends(get_current_employee)):
-    return db.query(CashSession).filter(CashSession.store_id == current.store_id).order_by(CashSession.opened_at.desc()).all()
+def list_cash_sessions(
+    db: Session = Depends(get_db), 
+    current: Employee = Depends(get_current_employee)
+):
+    """List all cash sessions for the current store"""
+    return db.query(CashSession).filter(
+        CashSession.store_id == current.store_id
+    ).order_by(CashSession.opened_at.desc()).all()
+
+
+@router.get("/current", dependencies=[Depends(require_cashier)])
+def get_current_cash_session(
+    db: Session = Depends(get_db),
+    current: Employee = Depends(get_current_employee),
+):
+    """
+    Get the current open cash session for the cashier.
+    Uses terminal_id from employee record if available.
+    """
+    # Try exact match with terminal_id
+    terminal_id = current.terminal_id
+    
+    if terminal_id:
+        row = db.query(CashSession).filter(
+            CashSession.store_id == current.store_id,
+            CashSession.cashier_id == current.id,
+            CashSession.terminal_id == terminal_id,
+            CashSession.status == "open",
+        ).order_by(CashSession.opened_at.desc()).first()
+        
+        if row:
+            return row
+    
+    # Fallback: any open session for this cashier (regardless of terminal)
+    row = db.query(CashSession).filter(
+        CashSession.store_id == current.store_id,
+        CashSession.cashier_id == current.id,
+        CashSession.status == "open",
+    ).order_by(CashSession.opened_at.desc()).first()
+    
+    return row
 
 
 @router.get("/{session_id}", dependencies=[Depends(require_cashier)])
-def get_cash_session(session_id: int, db: Session = Depends(get_db), current: Employee = Depends(get_current_employee)):
-    row = db.query(CashSession).filter(CashSession.id == session_id, CashSession.store_id == current.store_id).first()
+def get_cash_session(
+    session_id: int, 
+    db: Session = Depends(get_db), 
+    current: Employee = Depends(get_current_employee)
+):
+    row = db.query(CashSession).filter(
+        CashSession.id == session_id, 
+        CashSession.store_id == current.store_id
+    ).first()
     if not row:
         raise HTTPException(404, 'Cash session not found')
     return row
 
 
 @router.post("/{session_id}/close", dependencies=[Depends(require_cashier)])
-def close_cash_session(session_id: int, payload: CashSessionClose, db: Session = Depends(get_db), current: Employee = Depends(get_current_employee)):
-    row = db.query(CashSession).filter(CashSession.id == session_id, CashSession.store_id == current.store_id).with_for_update().first()
+def close_cash_session(
+    session_id: int, 
+    payload: CashSessionClose, 
+    db: Session = Depends(get_db), 
+    current: Employee = Depends(get_current_employee)
+):
+    row = db.query(CashSession).filter(
+        CashSession.id == session_id, 
+        CashSession.store_id == current.store_id
+    ).with_for_update().first()
+    
     if not row:
         raise HTTPException(404, 'Cash session not found')
     if row.status != 'open':
@@ -74,9 +157,14 @@ def close_cash_session(session_id: int, payload: CashSessionClose, db: Session =
             ),
         )
 
-    row.counted_cash = payload.counted_cash
+    row.counted_cash = payload.payment_counts.get('cash', 0)
+    row.counted_mpesa = payload.payment_counts.get('mpesa', 0)
+    row.counted_card = payload.payment_counts.get('card', 0)
+    row.counted_credit = payload.payment_counts.get('credit', 0)
+    row.counted_store_credit = payload.payment_counts.get('store_credit', 0)
+    row.total_counted = payload.total_counted
     row.variance = (
-        Decimal(str(payload.counted_cash)) - Decimal(str(row.expected_cash or 0))
+        Decimal(str(payload.payment_counts.get('cash', 0))) - Decimal(str(row.expected_cash or 0))
     ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     row.closed_at = datetime.utcnow()
     row.closed_by = current.id
@@ -84,17 +172,13 @@ def close_cash_session(session_id: int, payload: CashSessionClose, db: Session =
     if payload.notes:
         row.notes = (row.notes or "") + "\nClose: " + payload.notes
 
-    # Variance threshold enforcement — large variances require supervisor or above
-    VARIANCE_ALERT_THRESHOLD = settings.CASH_VARIANCE_THRESHOLD  # KES 1000 — adjust via config if needed
+    # Variance threshold enforcement
+    VARIANCE_ALERT_THRESHOLD = getattr(settings, 'CASH_VARIANCE_THRESHOLD', 1000)
 
     if row.variance is not None and abs(row.variance) > VARIANCE_ALERT_THRESHOLD:
         if current.role == Role.CASHIER:
             # Roll back the partial changes before raising
-            row.counted_cash = None
-            row.variance     = None
-            row.closed_at    = None
-            row.closed_by    = None
-            row.status       = "open"
+            db.rollback()
             raise HTTPException(
                 status_code=403,
                 detail=(
@@ -107,7 +191,8 @@ def close_cash_session(session_id: int, payload: CashSessionClose, db: Session =
     try:
         post_cash_session_close(db, row)
     except (ValueError, Exception) as e:
-        # Accounting system may not be fully initialized; allow session close anyway
         print(f"Warning: Failed to post cash session close accounting entry: {e}")
-    db.commit(); db.refresh(row)
+    
+    db.commit()
+    db.refresh(row)
     return row

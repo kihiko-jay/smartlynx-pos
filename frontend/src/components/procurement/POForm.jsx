@@ -39,7 +39,7 @@ export default function POForm({ poId, onBack, onSaved }) {
           notes:         po.notes || "",
           currency:      po.currency,
           items: po.items.map(it => ({
-            product_id:           it.product_id,
+            itemcode:               it.product_id, // Temporary, will be converted to itemcode
             ordered_qty_purchase: it.ordered_qty_purchase,
             purchase_unit_type:   it.purchase_unit_type,
             units_per_purchase:   it.units_per_purchase,
@@ -51,9 +51,26 @@ export default function POForm({ poId, onBack, onSaved }) {
     }
   }, [isEdit, poId]);
 
+  // Convert product_id to itemcode when products are loaded
+  useEffect(() => {
+    if (isEdit && products.length > 0) {
+      setForm(f => ({
+        ...f,
+        items: f.items.map(it => {
+          // If itemcode is a number, it's actually a product_id that needs conversion
+          if (typeof it.itemcode === 'number' || (typeof it.itemcode === 'string' && !isNaN(it.itemcode))) {
+            const prod = products.find(p => p.id === parseInt(it.itemcode));
+            return { ...it, itemcode: prod?.itemcode?.toString() || it.itemcode };
+          }
+          return it;
+        })
+      }));
+    }
+  }, [products, isEdit]);
+
   const addItem = () => setForm(f => ({
     ...f, items: [...f.items, {
-      product_id:"", ordered_qty_purchase:"1", purchase_unit_type:"carton",
+      itemcode:"", ordered_qty_purchase:"1", purchase_unit_type:"carton",
       units_per_purchase:"24", unit_cost:"0", notes:"",
     }],
   }));
@@ -82,7 +99,7 @@ export default function POForm({ poId, onBack, onSaved }) {
     if (!form.supplier_id) { setErr("Select a supplier"); return; }
     if (form.items.length === 0) { setErr("Add at least one product"); return; }
     for (const it of form.items) {
-      if (!it.product_id) { setErr("All items need a product"); return; }
+      if (!it.itemcode || it.itemcode === "") { setErr("All items need a product"); return; }
       if (parseFloat(it.ordered_qty_purchase) <= 0) { setErr("Quantity must be > 0"); return; }
     }
     setSaving(true); setErr("");
@@ -91,7 +108,7 @@ export default function POForm({ poId, onBack, onSaved }) {
         ...form,
         supplier_id: parseInt(form.supplier_id),
         items: form.items.map(it => ({
-          product_id:           parseInt(it.product_id),
+          itemcode:               parseInt(it.itemcode),
           ordered_qty_purchase: parseFloat(it.ordered_qty_purchase),
           purchase_unit_type:   it.purchase_unit_type,
           units_per_purchase:   parseInt(it.units_per_purchase),
@@ -166,12 +183,12 @@ export default function POForm({ poId, onBack, onSaved }) {
               {form.items.map((item, i) => (
                 <tr key={i} style={{ borderBottom:`1px solid ${BONE}` }}>
                   <td style={{ padding:"8px 10px", minWidth:160 }}>
-                    <select value={item.product_id}
-                            onChange={e => updateItem(i,"product_id",e.target.value)}
+                    <select value={item.itemcode}
+                            onChange={e => updateItem(i,"itemcode",e.target.value)}
                             style={{ padding:"6px 8px", borderRadius:6, border:`1px solid ${BONE}`,
                                      fontFamily:MONO, fontSize:11, width:"100%" }}>
                       <option value="">— product —</option>
-                      {products.map(p=><option key={p.id} value={p.id}>{p.name} ({p.sku})</option>)}
+                      {products.map(p=><option key={p.id} value={p.itemcode}>{p.name} ({p.sku})</option>)}
                     </select>
                   </td>
                   <td style={{ padding:"8px 10px", width:90 }}>

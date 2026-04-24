@@ -47,6 +47,7 @@ class ResetPasswordRequest(BaseModel):
 
 class EmployeeCreateRequest(BaseModel):
     full_name: str = Field(..., min_length=1, max_length=150)
+    username: str = Field(..., min_length=3, max_length=50, description="Unique username for login")
     email: EmailStr
     phone: Optional[str] = Field(None, max_length=20)
     password: str = Field(..., min_length=8, max_length=200)
@@ -66,13 +67,30 @@ class EmployeeCreateRequest(BaseModel):
             )
         return value
 
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, value: str) -> str:
+        if not value.isalnum() and not all(c.isalnum() or c == '_' for c in value):
+            raise ValueError("Username can only contain letters, numbers, and underscores")
+        return value.lower()
+
 
 class EmployeeUpdateRequest(BaseModel):
     full_name: Optional[str] = Field(None, min_length=1, max_length=150)
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
     phone: Optional[str] = Field(None, max_length=20)
     role: Optional[Role] = None
     terminal_id: Optional[str] = Field(None, max_length=20)
     is_active: Optional[bool] = None
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, value: Optional[str]) -> Optional[str]:
+        if value:
+            if not value.isalnum() and not all(c.isalnum() or c == '_' for c in value):
+                raise ValueError("Username can only contain letters, numbers, and underscores")
+            return value.lower()
+        return value
 
 
 class EmployeeOut(BaseModel):
@@ -80,6 +98,7 @@ class EmployeeOut(BaseModel):
     store_id: Optional[int] = None
     full_name: str
     email: str
+    username: Optional[str] = None
     phone: Optional[str]
     role: str
     terminal_id: Optional[str]
@@ -89,6 +108,25 @@ class EmployeeOut(BaseModel):
     clocked_out_at: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime]
+
+    @classmethod
+    def from_orm(cls, employee):
+        return cls(
+            id=employee.id,
+            store_id=employee.store_id,
+            full_name=employee.full_name,
+            email=employee.email,
+            username=employee.user_name,
+            phone=employee.phone,
+            role=employee.role.value,
+            terminal_id=employee.terminal_id,
+            is_active=employee.is_active,
+            last_login_at=employee.last_login_at,
+            clocked_in_at=employee.clocked_in_at,
+            clocked_out_at=employee.clocked_out_at,
+            created_at=employee.created_at,
+            updated_at=employee.updated_at,
+        )
 
     class Config:
         from_attributes = True
@@ -103,6 +141,7 @@ class EmployeeCreateResponse(BaseModel):
     id: int
     full_name: str
     email: str
+    username: Optional[str] = None
     role: str
     is_active: bool
     message: str

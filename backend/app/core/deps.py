@@ -280,10 +280,10 @@ def require_premium(
 
 def _plan_details():
     return [
-        {"plan": "starter", "price_kes": 1500, "period": "month",
+        {"plan": "starter", "price_kes": 2500, "period": "month",
          "features": ["1 store", "Full back office", "Inventory", "Reports", "Employees", "KRA eTIMS"]},
-        {"plan": "growth",  "price_kes": 3500, "period": "month",
+        {"plan": "growth",  "price_kes": 5500, "period": "month",
          "features": ["Up to 3 stores", "Everything in Starter", "Multi-store reports", "Priority support"]},
-        {"plan": "pro",     "price_kes": 7500, "period": "month",
+        {"plan": "pro",     "price_kes": 9500, "period": "month",
          "features": ["Unlimited stores", "Everything in Growth", "API access", "Dedicated support"]},
     ]

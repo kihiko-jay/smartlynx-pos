@@ -14,7 +14,7 @@ from starlette import status as http_status
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.core.deps import api_rate_limiter
 
-logger = logging.getLogger("dukapos.http")
+logger = logging.getLogger("smartlynx.http")
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):

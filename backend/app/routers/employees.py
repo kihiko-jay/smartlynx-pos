@@ -57,6 +57,11 @@ def create_employee(
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
+    # Check username uniqueness
+    existing = db.query(Employee).filter(Employee.user_name == payload.username).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Username already taken")
+
     # Cannot create admin (only during registration)
     if payload.role == Role.ADMIN:
         raise HTTPException(
@@ -76,6 +81,7 @@ def create_employee(
             store_id=current.store_id,
             full_name=payload.full_name,
             email=payload.email,
+            user_name=payload.username,  # Map username to user_name column
             phone=payload.phone,
             password=hash_password(payload.password),
             role=payload.role,
@@ -91,6 +97,7 @@ def create_employee(
             id=employee.id,
             full_name=employee.full_name,
             email=employee.email,
+            username=employee.user_name,  # Include username in response
             role=employee.role.value,
             is_active=True,
             message="Employee created successfully."
@@ -98,7 +105,7 @@ def create_employee(
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Failed to create employee")
+        raise HTTPException(status_code=500, detail=f"Failed to create employee: {str(e)}")
 
 
 @router.put("/{employee_id}", response_model=EmployeeOut)
@@ -158,10 +165,18 @@ def update_employee(
                 detail="Cannot deactivate the last active admin"
             )
 
-    # Apply updates
+    # Apply updates (handle username specially)
     update_data = payload.model_dump(exclude_unset=True)
     for field, value in update_data.items():
-        setattr(employee, field, value)
+        if field == 'username':
+            # Check if username is being changed and if it's taken
+            if value and value != employee.user_name:
+                existing = db.query(Employee).filter(Employee.user_name == value).first()
+                if existing:
+                    raise HTTPException(status_code=400, detail="Username already taken")
+                setattr(employee, 'user_name', value)
+        else:
+            setattr(employee, field, value)
 
     db.commit()
     db.refresh(employee)

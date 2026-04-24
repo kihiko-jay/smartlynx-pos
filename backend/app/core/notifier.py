@@ -24,7 +24,7 @@ from typing import Optional
 from fastapi import WebSocket
 from starlette.websockets import WebSocketDisconnect, WebSocketState
 
-logger = logging.getLogger("dukapos.ws")
+logger = logging.getLogger("smartlynx.ws")
 
 
 class _TerminalConnection:

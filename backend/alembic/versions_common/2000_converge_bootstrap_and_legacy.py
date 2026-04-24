@@ -9,7 +9,7 @@ from alembic import op
 
 
 revision = "2000"
-down_revision = ("0032_cashier_unique", "1000")
+down_revision = ("0032_cashier_open_session_unique", "1000")
 branch_labels = None
 depends_on = None
 

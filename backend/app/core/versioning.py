@@ -8,7 +8,7 @@ Strategy: URL prefix versioning (/api/v1/, /api/v2/)
     running version so they can detect when they're on a stale build
   - X-Deprecation-Notice header warns clients on v1 endpoints that have
     a v2 replacement (set per-route with the deprecation_notice dict below)
-  - 406 returned if client sends Accept: application/vnd.dukapos.v99+json
+  - 406 returned if client sends Accept: application/vnd.smartlynx.v99+json
     (future explicit content negotiation support)
 
 Usage in main.py:

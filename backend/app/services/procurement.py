@@ -100,6 +100,23 @@ def _get_product(db: Session, product_id: int, store_id: int,
     return p
 
 
+def _get_product_by_itemcode(db: Session, itemcode: int, store_id: int, 
+                              lock: bool = False) -> Product:
+    """Look up product by item code (like POS does)."""
+    q = db.query(Product).filter(
+        Product.itemcode == itemcode,
+        Product.store_id == store_id,
+        Product.is_active == True,
+    )
+    if lock:
+        q = q.with_for_update()
+    
+    product = q.first()
+    if not product:
+        raise HTTPException(404, f"Item code {itemcode} not found in this store")
+    return product
+
+
 def _recalc_po_totals(po: PurchaseOrder):
     """Recompute PO subtotal and total from its items."""
     subtotal = sum(item.line_total for item in po.items)
@@ -245,18 +262,22 @@ def create_po(db: Session, payload: POCreate, actor: Employee) -> PurchaseOrder:
     db.add(po)
     db.flush()  # get po.id
 
+    # Process each item
     for item_data in payload.items:
-        _get_product(db, item_data.product_id, store_id)
+        # Look up product by itemcode
+        product = _get_product_by_itemcode(db, item_data.itemcode, store_id)
+        
         base_qty = resolve_base_units(
-            db, item_data.product_id,
+            db, product.id,
             item_data.ordered_qty_purchase,
             item_data.purchase_unit_type,
             item_data.units_per_purchase,
         )
         line_total = (Decimal(str(base_qty)) * item_data.unit_cost).quantize(Decimal("0.01"))
+        
         db.add(PurchaseOrderItem(
             purchase_order_id    = po.id,
-            product_id           = item_data.product_id,
+            product_id           = product.id,
             ordered_qty_purchase = item_data.ordered_qty_purchase,
             purchase_unit_type   = item_data.purchase_unit_type,
             units_per_purchase   = item_data.units_per_purchase,
@@ -291,9 +312,11 @@ def update_po(db: Session, po_id: int, payload: POUpdate, actor: Employee) -> Pu
         db.flush()
 
         for item_data in payload.items:
-            _get_product(db, item_data.product_id, actor.store_id)
+            # Look up product by itemcode
+            product = _get_product_by_itemcode(db, item_data.itemcode, actor.store_id)
+            
             base_qty = resolve_base_units(
-                db, item_data.product_id,
+                db, product.id,
                 item_data.ordered_qty_purchase,
                 item_data.purchase_unit_type,
                 item_data.units_per_purchase,
@@ -301,7 +324,7 @@ def update_po(db: Session, po_id: int, payload: POUpdate, actor: Employee) -> Pu
             line_total = (Decimal(str(base_qty)) * item_data.unit_cost).quantize(Decimal("0.01"))
             db.add(PurchaseOrderItem(
                 purchase_order_id    = po.id,
-                product_id           = item_data.product_id,
+                product_id           = product.id,
                 ordered_qty_purchase = item_data.ordered_qty_purchase,
                 purchase_unit_type   = item_data.purchase_unit_type,
                 units_per_purchase   = item_data.units_per_purchase,
@@ -402,10 +425,11 @@ def create_grn(db: Session, payload: GRNCreate, actor: Employee) -> GoodsReceive
     db.flush()
 
     for line in payload.items:
-        _get_product(db, line.product_id, store_id)  # ownership check only
+        # Look up product by itemcode
+        product = _get_product_by_itemcode(db, line.itemcode, store_id)
 
         base_qty = resolve_base_units(
-            db, line.product_id,
+            db, product.id,
             line.received_qty_purchase,
             line.purchase_unit_type,
             line.units_per_purchase,
@@ -413,7 +437,7 @@ def create_grn(db: Session, payload: GRNCreate, actor: Employee) -> GoodsReceive
 
         if line.damaged_qty_base + line.rejected_qty_base > base_qty:
             raise HTTPException(400,
-                f"Product {line.product_id}: damaged + rejected ({line.damaged_qty_base + line.rejected_qty_base}) "
+                f"Item code {line.itemcode}: damaged + rejected ({line.damaged_qty_base + line.rejected_qty_base}) "
                 f"cannot exceed received base qty ({base_qty})")
 
         line_total = (
@@ -422,7 +446,7 @@ def create_grn(db: Session, payload: GRNCreate, actor: Employee) -> GoodsReceive
 
         db.add(GoodsReceivedItem(
             grn_id                 = grn.id,
-            product_id             = line.product_id,
+            product_id             = product.id,
             purchase_order_item_id = line.purchase_order_item_id,
             received_qty_purchase  = line.received_qty_purchase,
             purchase_unit_type     = line.purchase_unit_type,
@@ -767,7 +791,6 @@ def report_open_pos(db: Session, store_id: int):
         .order_by(PurchaseOrder.order_date.asc())
         .all()
     )
-
 
 
 def get_supplier_open_balance(db: Session, store_id: int, supplier_id: int):

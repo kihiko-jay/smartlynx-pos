@@ -315,7 +315,7 @@ export default function POSTerminal({ onNavigate }) {
     setCashSessionLoading(true);
     setCashSessionError("");
     try {
-      await session.closeCashSession(data.counted_cash, data.notes);
+      await session.closeCashSession(data);
       // Clear current session after closing
       session.setCurrentCashSession(null);
       setShowCloseCashSessionModal(false);

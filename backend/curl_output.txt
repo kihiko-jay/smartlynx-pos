@@ -1,0 +1,21 @@
+Note: Unnecessary use of -X or --request, GET is already inferred.
+*   Trying 127.0.0.1:8000...
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0* Connected to localhost (127.0.0.1) port 8000 (#0)
+> GET /api/v1/reports/z-tape/pdf?report_date=2026-04-23 HTTP/1.1
+> Host: localhost:8000
+> User-Agent: curl/7.81.0
+> Accept: */*
+> Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sZSI6ImFkbWluIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc3Njk4NTQ4MywiZXhwIjoxNzc2OTg3MjgzLCJqdGkiOiI3NTMxMDM5Yy01MWM4LTRmNjMtYjBjNi0xYThjNzdkMmY0YTUifQ.L_Yph8gRMYimY9ENOz8bI6zHSBAC9kTuTLzLcox07v0
+> 
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 500 Internal Server Error
+< date: Thu, 23 Apr 2026 23:04:53 GMT
+< server: uvicorn
+< content-length: 21
+< content-type: text/plain; charset=utf-8
+< 
+{ [21 bytes data]
+100    21  100    21    0     0    814      0 --:--:-- --:--:-- --:--:--   840
+* Connection #0 to host localhost left intact

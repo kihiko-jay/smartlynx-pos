@@ -10,6 +10,7 @@ class Role(str, enum.Enum):
     SUPERVISOR      = "supervisor"
     MANAGER         = "manager"
     ADMIN           = "admin"
+    BACKOFFICE      = "manager"
     PLATFORM_OWNER  = "platform_owner"   # You only — never visible to shops
 
 
@@ -21,6 +22,7 @@ class Employee(Base):
     store_id     = Column(Integer, ForeignKey("stores.id"), nullable=True)
     full_name    = Column(String(150), nullable=False)
     email        = Column(String(200), unique=True, nullable=False, index=True)
+    user_name    =Column (String(200),nullable=False, unique=True, index=True)
     phone        = Column(String(20),  nullable=True)
     pin          = Column(String(200), nullable=True)   # bcrypt-hashed
     password     = Column(String(200), nullable=False)

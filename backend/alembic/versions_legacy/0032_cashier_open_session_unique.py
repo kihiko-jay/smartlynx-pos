@@ -7,7 +7,7 @@ Create Date: 2026-04-22
 
 from alembic import op
 
-revision = '0032_cashier_unique'
+revision = '0032_cashier_open_session_unique'
 down_revision = '0031_stock_movement_types'
 branch_labels = None
 depends_on = None

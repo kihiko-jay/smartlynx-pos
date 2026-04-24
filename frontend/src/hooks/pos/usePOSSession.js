@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getSession, clearSession, cashSessionsAPI } from "../../api/client";
+import { cashSessionsAPI } from "../../api/client";
 
 const isElectron =
   typeof window !== "undefined" && !!window.electron?.app?.isElectron;
@@ -39,26 +39,23 @@ export function usePOSSession() {
     if (!session) return;
 
     setCashSessionsLoaded(false);
-
-    cashSessionsAPI
-      .list()
-      .then((rows) => {
-        const open = (rows || []).find(
-          (r) =>
-            r.status === "open" &&
-            String(r.cashier_id) === String(session.id) &&
-            String(r.terminal_id || "") === String(session.terminal_id || "")
-        );
-
-        setCurrentCashSession(open || null);
-      })
-      .catch(() => {
+    
+    // Use a unique cache key based on cashier ID to prevent stale data
+    const fetchCurrentSession = async () => {
+      try {
+        const row = await cashSessionsAPI.current();
+        console.log("Fetched current cash session:", row);
+        setCurrentCashSession(row || null);
+      } catch (err) {
+        console.error("Failed to fetch cash session:", err);
         setCurrentCashSession(null);
-      })
-      .finally(() => {
+      } finally {
         setCashSessionsLoaded(true);
-      });
-  }, [session]);
+      }
+    };
+    
+    fetchCurrentSession();
+  }, [session?.id]); // Re-fetch when cashier ID changes
 
   const openSecureLogin = () => {
     setSecureEmail("");
@@ -81,6 +78,7 @@ export function usePOSSession() {
         opening_float: parseFloat(openingFloat) || 0,
         notes: notes.trim(),
       });
+      console.log("Cash session opened:", newSession);
       setCurrentCashSession(newSession);
       return newSession;
     } catch (err) {
@@ -88,15 +86,13 @@ export function usePOSSession() {
     }
   };
 
-  const closeCashSession = async (countedCash, notes = "") => {
+  const closeCashSession = async (paymentData) => {
     if (!currentCashSession?.id) {
       throw new Error("No open cash session");
     }
     try {
-      const closed = await cashSessionsAPI.close(currentCashSession.id, {
-        counted_cash: parseFloat(countedCash) || 0,
-        notes: notes.trim(),
-      });
+      const closed = await cashSessionsAPI.close(currentCashSession.id, paymentData);
+      console.log("Cash session closed:", closed);
       setCurrentCashSession(null);
       return closed;
     } catch (err) {

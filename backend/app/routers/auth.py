@@ -8,6 +8,7 @@ Changes vs original:
   - /login no longer returns 401 with distinct messages for "no user" vs "bad password"
     (both return the same message to prevent user enumeration)
   - All DB writes are inside explicit transactions
+  - /login now supports both username and email (username field can be email or username)
 """
 
 import re
@@ -16,6 +17,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Request, Response
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
 
 from app.core.deps import (
     get_db, get_current_employee, require_admin, require_premium,
@@ -50,11 +52,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-def _mask_email(email: str) -> str:
-    if "@" not in email:
+def _mask_username(username: str) -> str:
+    """Mask username/email for logging (keep first char, show ***)."""
+    if "@" in username:  # It's an email
+        local, domain = username.split("@", 1)
+        return f"{local[:1]}***@{domain}"
+    elif len(username) > 3:
+        return f"{username[:2]}***"
+    else:
         return "***"
-    local, domain = email.split("@", 1)
-    return f"{local[:1]}***@{domain}"
 
 
 def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
@@ -151,14 +157,30 @@ def login(
     db: Session = Depends(get_db),
     _rate: None = Depends(login_rate_limiter),
 ):
-    employee = db.query(Employee).filter(Employee.email == payload.email).first()
-
+    """
+    Login with username or email.
+    The 'username' field accepts either:
+      - Username (user_name column)
+      - Email address (email column)
+    """
+    # Try to find by username first, then by email
+    employee = db.query(Employee).filter(
+        Employee.user_name == payload.username
+    ).first()
+    
+    if not employee:
+        # If not found by username, try email
+        employee = db.query(Employee).filter(
+            Employee.email == payload.username
+        ).first()
+    
     dummy_hash = "$2b$12$KIX/9f3sWWZD3zMgXeF0DOCKTiOGl3YC5Dy4a8ZlqG5v5tQXiKrpy"
     password_ok = verify_password(payload.password, employee.password if employee else dummy_hash)
 
     if not employee or not password_ok:
-        logger.warning("Failed login attempt for email=%s", _mask_email(payload.email))
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
+        logger.warning("Failed login attempt for username/email=%s", _mask_username(payload.username))
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username/email or password")
+    
     if not employee.is_active:
         raise HTTPException(status_code=403, detail="Account is deactivated")
 
@@ -182,7 +204,8 @@ def login(
     db.commit()
     _set_refresh_cookie(response, refresh_token)
 
-    logger.info("Employee %s logged in (role=%s)", employee.id, employee.role)
+    logger.info("Employee %s logged in (role=%s, identifier=%s)", 
+                employee.id, employee.role, payload.username)
 
     return TokenOut(
         access_token=access_token,
@@ -316,8 +339,14 @@ def logout_all_sessions(db: Session = Depends(get_db), current: Employee = Depen
 
 @router.post("/employees", response_model=EmployeeOut, dependencies=[Depends(require_premium)])
 def create_employee(payload: EmployeeCreate, db: Session = Depends(get_db)):
+    # Check if username already exists
+    if db.query(Employee).filter(Employee.user_name == payload.username).first():
+        raise HTTPException(status_code=400, detail="Username already taken")
+    
+    # Check if email already exists
     if db.query(Employee).filter(Employee.email == payload.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
+    
     emp = Employee(
         **payload.model_dump(exclude={"password"}),
         password=hash_password(payload.password),
@@ -326,6 +355,7 @@ def create_employee(payload: EmployeeCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(emp)
     return emp
+
 
 @router.post("/register", response_model=StoreRegistrationResponse, status_code=status.HTTP_201_CREATED)
 def register_store(
@@ -359,6 +389,7 @@ def register_store(
         message=f"Store registered. {TRIAL_DAYS}-day free trial started.",
         trial_ends_at=trial_end,
     )
+
 
 @router.post("/forgot-password")
 def forgot_password(

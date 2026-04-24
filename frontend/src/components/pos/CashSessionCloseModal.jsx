@@ -8,40 +8,74 @@ export default function CashSessionCloseModal({
   loading,
   error,
 }) {
-  const [countedCash, setCountedCash] = useState("");
+  const [paymentCounts, setPaymentCounts] = useState({
+    cash: "",
+    mpesa: "",
+    card: "",
+    credit: "",
+    store_credit: "",
+  });
   const [notes, setNotes] = useState("");
   const [validationError, setValidationError] = useState("");
-  const countedCashInputRef = useRef(null);
+  const cashInputRef = useRef(null);
 
-  const variance = useMemo(
-  () => (parseFloat(countedCash) || 0) - (parseFloat(session?.expected_cash) || 0),
-  [countedCash, session?.expected_cash]
-);
+  const totalCounted = useMemo(() => {
+    return Object.values(paymentCounts).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+  }, [paymentCounts]);
+
+  const cashVariance = useMemo(
+    () => (parseFloat(paymentCounts.cash) || 0) - (parseFloat(session?.expected_cash) || 0),
+    [paymentCounts.cash, session?.expected_cash]
+  );
+
+  const totalVariance = useMemo(() => {
+    // For now, only cash has an expected amount, others are informational
+    return cashVariance;
+  }, [cashVariance]);
 
   useEffect(() => {
-    if (isOpen && countedCashInputRef.current) {
-      countedCashInputRef.current.focus();
+    if (isOpen && cashInputRef.current) {
+      cashInputRef.current.focus();
     }
   }, [isOpen]);
 
   const handleSubmit = () => {
     setValidationError("");
 
-    if (!countedCash.trim()) {
-      setValidationError("Counted cash is required");
-      countedCashInputRef.current?.focus();
+    // Validate that at least cash is entered (required)
+    if (!paymentCounts.cash.trim()) {
+      setValidationError("Cash count is required");
+      cashInputRef.current?.focus();
       return;
     }
 
-    const countedValue = parseFloat(countedCash);
-    if (isNaN(countedValue) || countedValue < 0) {
-      setValidationError("Counted cash must be a valid number (zero or greater)");
-      countedCashInputRef.current?.focus();
+    const cashValue = parseFloat(paymentCounts.cash);
+    if (isNaN(cashValue) || cashValue < 0) {
+      setValidationError("Cash count must be a valid number (zero or greater)");
+      cashInputRef.current?.focus();
       return;
+    }
+
+    // Validate other payment methods
+    for (const [method, value] of Object.entries(paymentCounts)) {
+      if (method !== 'cash' && value.trim()) {
+        const numValue = parseFloat(value);
+        if (isNaN(numValue) || numValue < 0) {
+          setValidationError(`${method.charAt(0).toUpperCase() + method.slice(1)} count must be a valid number (zero or greater)`);
+          return;
+        }
+      }
     }
 
     onSubmit?.({
-      counted_cash: countedValue,
+      payment_counts: {
+        cash: cashValue,
+        mpesa: parseFloat(paymentCounts.mpesa) || 0,
+        card: parseFloat(paymentCounts.card) || 0,
+        credit: parseFloat(paymentCounts.credit) || 0,
+        store_credit: parseFloat(paymentCounts.store_credit) || 0,
+      },
+      total_counted: totalCounted,
       notes: notes.trim(),
     });
   };
@@ -51,6 +85,13 @@ export default function CashSessionCloseModal({
       e.preventDefault();
       handleSubmit();
     }
+  };
+
+  const updatePaymentCount = (method, value) => {
+    setPaymentCounts(prev => ({
+      ...prev,
+      [method]: value
+    }));
   };
 
   if (!isOpen) return null;
@@ -100,7 +141,7 @@ export default function CashSessionCloseModal({
             lineHeight: "1.4",
           }}
         >
-          Enter the total cash in the drawer after sales.
+          Enter the total amounts received for each payment method during this shift.
         </p>
 
         <div
@@ -146,58 +187,250 @@ export default function CashSessionCloseModal({
                 marginBottom: "4px",
               }}
             >
-              Variance
+              Cash Variance
             </div>
             <div
               style={{
                 fontSize: "16px",
                 fontWeight: 700,
-                color: variance < 0 ? "#dc2626" : variance > 0 ? "#16a34a" : "#6b7280",
+                color: cashVariance < 0 ? "#dc2626" : cashVariance > 0 ? "#16a34a" : "#6b7280",
               }}
             >
-              {variance >= 0 ? "+" : ""}{variance.toFixed(2)} KES
+              {cashVariance >= 0 ? "+" : ""}{cashVariance.toFixed(2)} KES
             </div>
           </div>
         </div>
 
         <div style={{ marginBottom: "16px" }}>
-          <label
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "#155eef",
+                  marginBottom: "4px",
+                  textTransform: "uppercase",
+                }}
+              >
+                Cash (KES) *
+              </label>
+              <input
+                ref={cashInputRef}
+                type="number"
+                value={paymentCounts.cash}
+                onChange={(e) => updatePaymentCount("cash", e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="0.00"
+                disabled={loading}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "4px",
+                  fontSize: "15px",
+                  fontFamily: "inherit",
+                  boxSizing: "border-box",
+                  outline: "none",
+                }}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = "#155eef")
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = "#cbd5e1")
+                }
+              />
+            </div>
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "#6b7280",
+                  marginBottom: "4px",
+                  textTransform: "uppercase",
+                }}
+              >
+                M-Pesa (KES)
+              </label>
+              <input
+                type="number"
+                value={paymentCounts.mpesa}
+                onChange={(e) => updatePaymentCount("mpesa", e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="0.00"
+                disabled={loading}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "4px",
+                  fontSize: "15px",
+                  fontFamily: "inherit",
+                  boxSizing: "border-box",
+                  outline: "none",
+                }}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = "#155eef")
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = "#cbd5e1")
+                }
+              />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: "16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "#6b7280",
+                  marginBottom: "4px",
+                  textTransform: "uppercase",
+                }}
+              >
+                Card (KES)
+              </label>
+              <input
+                type="number"
+                value={paymentCounts.card}
+                onChange={(e) => updatePaymentCount("card", e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="0.00"
+                disabled={loading}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "4px",
+                  fontSize: "15px",
+                  fontFamily: "inherit",
+                  boxSizing: "border-box",
+                  outline: "none",
+                }}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = "#155eef")
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = "#cbd5e1")
+                }
+              />
+            </div>
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "#6b7280",
+                  marginBottom: "4px",
+                  textTransform: "uppercase",
+                }}
+              >
+                Credit (KES)
+              </label>
+              <input
+                type="number"
+                value={paymentCounts.credit}
+                onChange={(e) => updatePaymentCount("credit", e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="0.00"
+                disabled={loading}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "4px",
+                  fontSize: "15px",
+                  fontFamily: "inherit",
+                  boxSizing: "border-box",
+                  outline: "none",
+                }}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = "#155eef")
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = "#cbd5e1")
+                }
+              />
+            </div>
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "#6b7280",
+                  marginBottom: "4px",
+                  textTransform: "uppercase",
+                }}
+              >
+                Store Credit (KES)
+              </label>
+              <input
+                type="number"
+                value={paymentCounts.store_credit}
+                onChange={(e) => updatePaymentCount("store_credit", e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="0.00"
+                disabled={loading}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "4px",
+                  fontSize: "15px",
+                  fontFamily: "inherit",
+                  boxSizing: "border-box",
+                  outline: "none",
+                }}
+                onFocus={(e) =>
+                  (e.target.style.borderColor = "#155eef")
+                }
+                onBlur={(e) =>
+                  (e.target.style.borderColor = "#cbd5e1")
+                }
+              />
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginBottom: "16px",
+            padding: "12px",
+            background: "#f0f9ff",
+            borderRadius: "4px",
+            border: "1px solid #0ea5e9",
+          }}
+        >
+          <div
             style={{
-              display: "block",
               fontSize: "12px",
               fontWeight: 600,
-              color: "#155eef",
-              marginBottom: "4px",
+              color: "#0ea5e9",
               textTransform: "uppercase",
+              marginBottom: "4px",
             }}
           >
-            Counted Cash (KES)
-          </label>
-          <input
-            ref={countedCashInputRef}
-            type="number"
-            value={countedCash}
-            onChange={(e) => setCountedCash(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="0.00"
-            disabled={loading}
+            Total Counted
+          </div>
+          <div
             style={{
-              width: "100%",
-              padding: "10px 12px",
-              border: "1px solid #cbd5e1",
-              borderRadius: "4px",
-              fontSize: "15px",
-              fontFamily: "inherit",
-              boxSizing: "border-box",
-              outline: "none",
+              fontSize: "18px",
+              fontWeight: 700,
+              color: "#0ea5e9",
             }}
-            onFocus={(e) =>
-              (e.target.style.borderColor = "#155eef")
-            }
-            onBlur={(e) =>
-              (e.target.style.borderColor = "#cbd5e1")
-            }
-          />
+          >
+            {totalCounted.toFixed(2)} KES
+          </div>
         </div>
 
         <div style={{ marginBottom: "20px" }}>

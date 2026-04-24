@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import io
 from typing import Any, List, Optional, Tuple
+from datetime import datetime
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, letter
@@ -29,10 +30,10 @@ from reportlab.platypus import (
     Spacer,
     PageBreak,
     Image,
+    HRFlowable,
 )
 from reportlab.pdfgen import canvas
 from fastapi.responses import FileResponse, StreamingResponse
-from datetime import datetime
 
 
 # ── Configuration ─────────────────────────────────────────────────────────────
@@ -61,78 +62,60 @@ class Colors:
     ERROR = colors.HexColor("#ef4444")        # Red
 
 
-# ── Style definitions ─────────────────────────────────────────────────────────
+# ── Style definitions (with cache to prevent duplicates) ─────────────────────
+
+_styles_cache = None
+
 
 def get_styles() -> dict:
     """
     Return standard ReportLab styles with Smartlynx branding.
+    Styles are cached to prevent duplicate definition errors.
     
     Returns:
         Dictionary of paragraph styles keyed by name.
     """
-    styles = getSampleStyleSheet()
+    global _styles_cache
+    if _styles_cache is None:
+        _styles_cache = getSampleStyleSheet()
+        
+        # Define custom styles only if they don't exist
+        custom_styles = [
+            ('CustomTitle', 'Heading1', DEFAULT_FONT_SIZE_TITLE, Colors.PRIMARY, 1, 4),
+            ('DocHeader', 'Heading2', DEFAULT_FONT_SIZE_HEADING, Colors.TEXT_DARK, 0, 2),
+            ('Metadata', 'Normal', DEFAULT_FONT_SIZE_SMALL, Colors.TEXT_LIGHT, 0, 1),
+            ('BodyText', 'Normal', DEFAULT_FONT_SIZE_NORMAL, Colors.TEXT_DARK, 0, 2),
+            ('TableHeader', 'Normal', DEFAULT_FONT_SIZE_NORMAL, Colors.TEXT_DARK, 0, 0),
+            ('Footer', 'Normal', DEFAULT_FONT_SIZE_SMALL, Colors.TEXT_LIGHT, 0, 1),
+        ]
+        
+        for style_name, parent_name, font_size, text_color, alignment, space_after in custom_styles:
+            if style_name not in _styles_cache:
+                _styles_cache.add(ParagraphStyle(
+                    name=style_name,
+                    parent=_styles_cache[parent_name],
+                    fontSize=font_size,
+                    textColor=text_color,
+                    alignment=alignment,
+                    spaceAfter=space_after,
+                    fontName='Helvetica' if not style_name.startswith('CustomTitle') else 'Helvetica-Bold',
+                ))
+            
+            # Also set bold version for TableHeader
+            if style_name == 'TableHeader':
+                bold_name = 'TableHeaderBold'
+                if bold_name not in _styles_cache:
+                    _styles_cache.add(ParagraphStyle(
+                        name=bold_name,
+                        parent=_styles_cache[parent_name],
+                        fontSize=font_size,
+                        textColor=text_color,
+                        alignment=alignment,
+                        spaceAfter=space_after,
+                        fontName='Helvetica-Bold',
+                    ))
     
-    # Title style
-    styles.add(ParagraphStyle(
-        name="CustomTitle",
-        parent=styles["Heading1"],
-        fontSize=DEFAULT_FONT_SIZE_TITLE,
-        textColor=Colors.PRIMARY,
-        spaceAfter=4,
-        fontName="Helvetica-Bold",
-    ))
-    
-    # Document header style (e.g., "PURCHASE ORDER")
-    styles.add(ParagraphStyle(
-        name="DocHeader",
-        parent=styles["Heading2"],
-        fontSize=DEFAULT_FONT_SIZE_HEADING,
-        textColor=Colors.TEXT_DARK,
-        spaceAfter=2,
-        fontName="Helvetica-Bold",
-    ))
-    
-    # Metadata (e.g., "Document ID: PO-001")
-    styles.add(ParagraphStyle(
-        name="Metadata",
-        parent=styles["Normal"],
-        fontSize=DEFAULT_FONT_SIZE_SMALL,
-        textColor=Colors.TEXT_LIGHT,
-        spaceAfter=1,
-        fontName="Helvetica",
-    ))
-    
-    # Normal text
-    styles.add(ParagraphStyle(
-        name="BodyText",
-        parent=styles["Normal"],
-        fontSize=DEFAULT_FONT_SIZE_NORMAL,
-        textColor=Colors.TEXT_DARK,
-        spaceAfter=2,
-        fontName="Helvetica",
-    ))
-    
-    # Table header text
-    styles.add(ParagraphStyle(
-        name="TableHeader",
-        parent=styles["Normal"],
-        fontSize=DEFAULT_FONT_SIZE_NORMAL,
-        textColor=Colors.TEXT_DARK,
-        spaceAfter=0,
-        fontName="Helvetica-Bold",
-    ))
-    
-    # Small text (footer)
-    styles.add(ParagraphStyle(
-        name="Footer",
-        parent=styles["Normal"],
-        fontSize=DEFAULT_FONT_SIZE_SMALL,
-        textColor=Colors.TEXT_LIGHT,
-        spaceAfter=1,
-        fontName="Helvetica",
-    ))
-    
-    return styles
+    return _styles_cache
 
 
 # ── PDF Response helpers ──────────────────────────────────────────────────────
@@ -194,7 +177,8 @@ def build_store_header(
     elements.append(Paragraph(store_name, styles["CustomTitle"]))
     
     # Location
-    elements.append(Paragraph(store_location, styles["Metadata"]))
+    if store_location:
+        elements.append(Paragraph(store_location, styles["Metadata"]))
     
     # Additional info if provided
     if addition_info:
@@ -253,6 +237,42 @@ def build_section_header(title: str) -> List:
     return elements
 
 
+def build_footer(
+    store_name: str,
+    additional_notes: Optional[str] = None,
+) -> List:
+    """
+    Build document footer.
+    
+    Args:
+        store_name: Store name for copyright info
+        additional_notes: Optional disclaimer or notes
+    
+    Returns:
+        List of Platypus elements.
+    """
+    styles = get_styles()
+    elements = []
+    
+    elements.append(Spacer(1, 6 * mm))
+    
+    # Horizontal line
+    elements.append(HRFlowable(width="100%", thickness=0.5, color=Colors.BORDER))
+    
+    # Store info
+    elements.append(Paragraph(f"{store_name} | Smartlynx POS System", styles["Footer"]))
+    
+    # Additional notes if provided
+    if additional_notes:
+        elements.append(Paragraph(additional_notes, styles["Footer"]))
+    
+    # Generation timestamp
+    now = datetime.now().strftime("%d %b %Y %H:%M")
+    elements.append(Paragraph(f"Generated on {now}", styles["Footer"]))
+    
+    return elements
+
+
 # ── Table builders ───────────────────────────────────────────────────────────
 
 def build_two_column_info_table(
@@ -260,7 +280,7 @@ def build_two_column_info_table(
     right_label_value_pairs: List[Tuple[str, str]],
 ) -> List:
     """
-    Build a two-column side-by-side information table (e.g., supplier vs. billing details).
+    Build a two-column side-by-side information table.
     
     Args:
         left_label_value_pairs: List of (label, value) tuples for left column
@@ -305,7 +325,7 @@ def build_two_column_info_table(
 def build_items_table(
     headers: List[str],
     rows: List[List],
-    col_widths: Optional[List] = None,
+    col_widths: Optional[List[float]] = None,
 ) -> List:
     """
     Build a standard items/lines table with header row.
@@ -325,10 +345,10 @@ def build_items_table(
         available_width = 170 * mm  # Page width minus margins
         col_widths = [available_width / len(headers)] * len(headers)
     else:
-        col_widths = [w * mm for w in col_widths]  # Convert mm to reportlab units
+        col_widths = [w * mm for w in col_widths]
     
-    # Build header row with styled cells
-    header_cells = [Paragraph(h, styles["TableHeader"]) for h in headers]
+    # Build header row
+    header_cells = [Paragraph(f"<b>{h}</b>", styles["TableHeaderBold"]) for h in headers]
     
     # Build data rows
     data_rows = [[Paragraph(str(cell), styles["BodyText"]) for cell in row] for row in rows]
@@ -338,38 +358,31 @@ def build_items_table(
     table = Table(all_rows, colWidths=col_widths)
     
     table.setStyle(TableStyle([
-        # Header row styling
         ("BACKGROUND", (0, 0), (-1, 0), Colors.TABLE_HEADER_BG),
         ("TEXTCOLOR", (0, 0), (-1, 0), Colors.TEXT_DARK),
         ("ALIGN", (0, 0), (-1, 0), "CENTER"),
         ("VALIGN", (0, 0), (-1, 0), "MIDDLE"),
-        ("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 9),
         ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
         ("TOPPADDING", (0, 0), (-1, 0), 6),
         ("LINEBELOW", (0, 0), (-1, 0), 1, Colors.BORDER),
-        
-        # Data rows styling
         ("ALIGN", (0, 1), (-1, -1), "LEFT"),
         ("VALIGN", (0, 1), (-1, -1), "MIDDLE"),
-        ("FONT", (0, 1), (-1, -1), "Helvetica", 9),
         ("LEFTPADDING", (0, 1), (-1, -1), 4),
         ("RIGHTPADDING", (0, 1), (-1, -1), 4),
         ("TOPPADDING", (0, 1), (-1, -1), 4),
         ("BOTTOMPADDING", (0, 1), (-1, -1), 4),
         ("LINEBELOW", (0, 1), (-1, -1), 0.5, Colors.BORDER),
-        
-        # Alternate row coloring for readability
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f9fafb")]),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, Colors.HEADER_BG]),
     ]))
     
     return [table, Spacer(1, 4 * mm)]
 
 
 def build_totals_section(
-    items: List[Tuple[str, str]],  # List of (label, value) tuples
+    items: List[Tuple[str, str]],
 ) -> List:
     """
-    Build a right-aligned totals section (subtotal, tax, total).
+    Build a right-aligned totals section.
     
     Args:
         items: List of (label, value) tuples e.g., [("Subtotal", "10,000.00"), ...]
@@ -382,73 +395,34 @@ def build_totals_section(
     rows = []
     for label, value in items:
         is_total = "total" in label.lower()
-        font_style = "Helvetica-Bold" if is_total else "Helvetica"
-        size = 11 if is_total else 10
         color = Colors.PRIMARY if is_total else Colors.TEXT_DARK
         
         label_cell = Paragraph(f"<font color='{color}'><b>{label}</b></font>", styles["BodyText"])
         value_cell = Paragraph(
-            f"<font color='{color}'><b>{value} KES</b></font>",
+            f"<font color='{color}'><b>{value}</b></font>",
             styles["BodyText"]
         )
         rows.append([label_cell, value_cell])
     
-    # Right-align the totals section
-    table = Table(
-        rows,
-        colWidths=[100 * mm, 70 * mm],
-    )
+    table = Table(rows, colWidths=[100 * mm, 70 * mm])
     
     table.setStyle(TableStyle([
         ("ALIGN", (0, 0), (0, -1), "RIGHT"),
         ("ALIGN", (1, 0), (1, -1), "RIGHT"),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("FONT", (0, 0), (-1, -1), "Helvetica", 9),
         ("LEFTPADDING", (0, 0), (-1, -1), 4),
         ("RIGHTPADDING", (0, 0), (-1, -1), 4),
         ("TOPPADDING", (0, 0), (-1, -1), 3),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-        ("LINEBELOW", (0, -1), (-1, -1), 1, Colors.PRIMARY),
     ]))
     
-    return [Spacer(1, 50 * mm), table, Spacer(1, 6 * mm)]
-
-
-def build_footer(
-    store_info: str,
-    additional_notes: Optional[str] = None,
-) -> List:
-    """
-    Build document footer.
+    # Add bottom border if there are items
+    if items:
+        table.setStyle(TableStyle([
+            ("LINEBELOW", (0, -1), (-1, -1), 1, Colors.PRIMARY),
+        ]))
     
-    Args:
-        store_info: Store contact info or address
-        additional_notes: Optional disclaimer or notes
-    
-    Returns:
-        List of Platypus elements.
-    """
-    styles = get_styles()
-    elements = []
-    
-    elements.append(Spacer(1, 6 * mm))
-    
-    # Horizontal line
-    from reportlab.platypus import HRFlowable
-    elements.append(HRFlowable(width="100%", thickness=0.5, color=Colors.BORDER))
-    
-    # Store info
-    elements.append(Paragraph(store_info, styles["Footer"]))
-    
-    # Additional notes if provided
-    if additional_notes:
-        elements.append(Paragraph(additional_notes, styles["Footer"]))
-    
-    # Generation timestamp
-    now = datetime.now().strftime("%d %b %Y %H:%M")
-    elements.append(Paragraph(f"Generated on {now} | Smartlynx POS System", styles["Footer"]))
-    
-    return elements
+    return [Spacer(1, 30 * mm), table, Spacer(1, 6 * mm)]
 
 
 # ── Main PDF document builder ────────────────────────────────────────────────
@@ -481,13 +455,11 @@ def create_pdf_document(
         title="Smartlynx Document",
     )
     
-    # Build the PDF
     doc.build(elements)
-    
     pdf_buffer.seek(0)
     return pdf_buffer.getvalue()
 
 
 def format_currency(value: float | int) -> str:
-    """Format a number as KES currency (e.g., '1,234.56')."""
-    return f"{value:,.2f}"
+    """Format a number as KES currency (e.g., 'KES 1,234.56')."""
+    return f"KES {value:,.2f}"

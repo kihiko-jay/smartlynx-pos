@@ -24,7 +24,7 @@ from collections import defaultdict, deque
 from threading import Lock
 from typing import Optional
 
-logger = logging.getLogger("dukapos.metrics")
+logger = logging.getLogger("smartlynx.metrics")
 
 
 class Metrics:

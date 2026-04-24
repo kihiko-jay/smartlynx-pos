@@ -11,7 +11,7 @@ import time
 from threading import Lock
 from typing import Optional
 
-logger = logging.getLogger("dukapos.auth_state")
+logger = logging.getLogger("smartlynx.auth_state")
 
 try:
     import redis

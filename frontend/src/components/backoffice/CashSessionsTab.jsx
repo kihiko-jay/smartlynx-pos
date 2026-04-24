@@ -48,7 +48,7 @@ export default function CashSessionsTab() {
       <div style={{ display: "grid", gap: 16 }}>
         <button
           onClick={() => setSelectedSession(null)}
-          style={shellStyles.secondaryButton()}
+          style={shellStyles.secondaryButton}
         >
           ← Back to List
         </button>

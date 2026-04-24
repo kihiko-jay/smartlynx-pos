@@ -1,5 +1,5 @@
 """
-Redis-backed caching for DukaPOS (production layer).
+Redis-backed caching for Smartlynx (production layer).
 
 Architecture:
   - Wraps redis-py with a graceful fallback: if Redis is unreachable, every
@@ -22,7 +22,7 @@ import logging
 import os
 from typing import Any, Optional
 
-logger = logging.getLogger("dukapos.cache")
+logger = logging.getLogger("smartlynx.cache")
 
 try:
     import redis.asyncio as aioredis

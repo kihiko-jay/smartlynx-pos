@@ -3,6 +3,7 @@ import { authAPI, saveSession, sessionHelpers } from "../api/client";
 
 const isElectron = typeof window !== "undefined" && !!window.electron?.app?.isElectron;
 const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "true";
+const DEMO_USERNAME = DEMO_MODE ? import.meta.env.VITE_DEMO_USERNAME || "admin" : "";
 const DEMO_EMAIL = DEMO_MODE ? import.meta.env.VITE_DEMO_EMAIL || "admin@dukapos.ke" : "";
 const DEMO_PASSWORD = DEMO_MODE ? import.meta.env.VITE_DEMO_PASSWORD || "admin1234" : "";
 
@@ -30,13 +31,14 @@ const getLabelStyle = (isMobile) => ({
 });
 
 export default function Login({ onLogin, onNavigate, bootError = "", onClearBootError }) {
-  const [email, setEmail] = useState(DEMO_EMAIL);
+  const [username, setUsername] = useState(DEMO_USERNAME || DEMO_EMAIL); // Can be username or email
   const [password, setPassword] = useState(DEMO_PASSWORD);
   const [error, setError] = useState(bootError);
   const [loading, setLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < 768);
   const [apiBase, setApiBase] = useState("");
   const [isConnectionError, setIsConnectionError] = useState(false);
+  const [inputType, setInputType] = useState("text"); // For showing username/email hint
 
   useEffect(() => {
     setError(bootError || "");
@@ -69,7 +71,8 @@ export default function Login({ onLogin, onNavigate, bootError = "", onClearBoot
     setLoading(true);
 
     try {
-      const data = await authAPI.login(email.trim(), password);
+      // Use 'username' field instead of 'email' - accepts both username and email
+      const data = await authAPI.login(username.trim(), password);
 
       await sessionHelpers.saveTokens({
         accessToken: data.access_token,
@@ -135,6 +138,9 @@ export default function Login({ onLogin, onNavigate, bootError = "", onClearBoot
     }
   };
 
+  // Detect if input looks like an email to show appropriate hint
+  const isEmailInput = username.includes("@") && username.includes(".");
+  
   return (
     <div
       style={{
@@ -223,7 +229,7 @@ export default function Login({ onLogin, onNavigate, bootError = "", onClearBoot
                   Welcome back
                 </div>
                 <div style={{ fontSize: isMobile ? 12 : 14, color: "#64748b", lineHeight: 1.6 }}>
-                  Enter your staff credentials to continue.
+                  Enter your username or email and password to continue.
                 </div>
               </div>
 
@@ -235,13 +241,38 @@ export default function Login({ onLogin, onNavigate, bootError = "", onClearBoot
 
               <form onSubmit={handleSubmit}>
                 <div style={{ marginBottom: 14 }}>
-                  <label style={getLabelStyle(isMobile)}>Email</label>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required style={getFieldStyle(isMobile)} />
+                  <label style={getLabelStyle(isMobile)}>
+                    Username or Email
+                    {isEmailInput && username && (
+                      <span style={{ fontSize: 10, fontWeight: "normal", marginLeft: 8, color: "#6b7280" }}>
+                        (using email)
+                      </span>
+                    )}
+                  </label>
+                  <input 
+                    type="text" 
+                    value={username} 
+                    onChange={(e) => setUsername(e.target.value)} 
+                    autoComplete="username" 
+                    required 
+                    placeholder="e.g., john_doe or john@example.com"
+                    style={getFieldStyle(isMobile)} 
+                  />
+                  <div style={{ fontSize: 10, color: "#6b7280", marginTop: 4, display: "flex", gap: 8 }}>
+                    <span>💡 Tip: Use your username (e.g., "admin") OR email address</span>
+                  </div>
                 </div>
 
                 <div style={{ marginBottom: 16 }}>
                   <label style={getLabelStyle(isMobile)}>Password</label>
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required style={getFieldStyle(isMobile)} />
+                  <input 
+                    type="password" 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                    autoComplete="current-password" 
+                    required 
+                    style={getFieldStyle(isMobile)} 
+                  />
                 </div>
 
                 {error ? (
@@ -268,7 +299,8 @@ export default function Login({ onLogin, onNavigate, bootError = "", onClearBoot
                         <div style={{ color: "#333", marginBottom: 8 }}>
                           • Verify the server address is correct (shown above)<br />
                           • Check that the SmartlynX backend is running<br />
-                          • Confirm your network connection is active
+                          • Confirm your network connection is active<br />
+                          • Try using your username instead of email (or vice versa)
                         </div>
                         
                         <div style={{ display: "flex", gap: 8, marginTop: 10 }}>

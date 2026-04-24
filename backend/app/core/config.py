@@ -5,7 +5,7 @@ from decimal import Decimal
 class Settings(BaseSettings):
     # App
     APP_NAME: str = "Smartlynx"
-    APP_VERSION: str = "4.5.2"
+    APP_VERSION: str = "4.5.1"
     DEBUG: bool = False
     ENVIRONMENT: str = "development"
 

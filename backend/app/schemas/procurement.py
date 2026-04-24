@@ -34,7 +34,7 @@ class PackagingOut(BaseModel):
 # ── PurchaseOrder ─────────────────────────────────────────────────────────────
 
 class POItemCreate(BaseModel):
-    product_id: int
+    itemcode: int  # Changed from product_id to itemcode
     ordered_qty_purchase: Decimal = Field(..., gt=0)
     purchase_unit_type: str = "unit"
     units_per_purchase: int = Field(1, gt=0)
@@ -42,8 +42,7 @@ class POItemCreate(BaseModel):
     notes: Optional[str] = None
 
     @model_validator(mode="after")
-    def compute_base_units(self) -> "POItemCreate":
-        # Validation only — actual DB write happens in the service
+    def validate_item(self) -> "POItemCreate":
         if self.ordered_qty_purchase <= 0:
             raise ValueError("ordered_qty_purchase must be > 0")
         return self
@@ -127,7 +126,7 @@ class POSummary(BaseModel):
 # ── GRN ───────────────────────────────────────────────────────────────────────
 
 class GRNItemCreate(BaseModel):
-    product_id: int
+    itemcode: int  # Changed from product_id to itemcode
     purchase_order_item_id: Optional[int] = None
     received_qty_purchase: Decimal = Field(..., ge=0)
     purchase_unit_type: str = "unit"

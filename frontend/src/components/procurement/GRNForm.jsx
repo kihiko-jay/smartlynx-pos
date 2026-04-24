@@ -42,7 +42,7 @@ export default function GRNForm({ prefillPoId, onBack, onSaved }) {
         ...f,
         supplier_id: p.supplier_id,
         items: p.items.filter(it => it.remaining_qty_base > 0).map(it => ({
-          product_id:            it.product_id,
+          itemcode:              it.product_id, // Will be converted to itemcode
           product_name:          it.product_name,
           purchase_order_item_id:it.id,
           received_qty_purchase: "0",
@@ -60,9 +60,26 @@ export default function GRNForm({ prefillPoId, onBack, onSaved }) {
     }).catch(console.error);
   }, [form.purchase_order_id]);
 
+  // Convert product_id to itemcode when products are loaded
+  useEffect(() => {
+    if (products.length > 0) {
+      setForm(f => ({
+        ...f,
+        items: f.items.map(it => {
+          // If itemcode is a number, it's actually a product_id that needs conversion
+          if (typeof it.itemcode === 'number' || (typeof it.itemcode === 'string' && !isNaN(it.itemcode))) {
+            const prod = products.find(p => p.id === parseInt(it.itemcode));
+            return { ...it, itemcode: prod?.itemcode?.toString() || it.itemcode };
+          }
+          return it;
+        })
+      }));
+    }
+  }, [products]);
+
   const addItem = () => setForm(f => ({
     ...f, items: [...f.items, {
-      product_id:"", product_name:"", purchase_order_item_id: null,
+      itemcode:"", product_name:"", purchase_order_item_id: null,
       received_qty_purchase:"0", purchase_unit_type:"carton",
       units_per_purchase:"24", damaged_qty_base:"0", rejected_qty_base:"0",
       cost_per_base_unit:"0", batch_number:"", expiry_date:"", notes:"", _max_base: null,
@@ -72,8 +89,8 @@ export default function GRNForm({ prefillPoId, onBack, onSaved }) {
   const updateItem = (i, field, val) => setForm(f => {
     const items = [...f.items];
     items[i] = { ...items[i], [field]: val };
-    if (field === "product_id") {
-      const prod = products.find(p => String(p.id) === String(val));
+    if (field === "itemcode") {
+      const prod = products.find(p => String(p.itemcode) === String(val));
       if (prod) items[i].product_name = prod.name;
     }
     return { ...f, items };
@@ -88,7 +105,7 @@ export default function GRNForm({ prefillPoId, onBack, onSaved }) {
     if (!form.supplier_id) { setErr("Select a supplier"); return; }
     if (form.items.length === 0) { setErr("Add at least one product"); return; }
     for (const it of form.items) {
-      if (!it.product_id) { setErr("All lines need a product"); return; }
+      if (!it.itemcode || it.itemcode === "") { setErr("All lines need a product"); return; }
       const dmg = parseInt(it.damaged_qty_base)||0;
       const rej = parseInt(it.rejected_qty_base)||0;
       if (dmg + rej > baseQty(it)) { setErr(`Damaged + rejected cannot exceed received qty for ${it.product_name || "a product"}`); return; }
@@ -100,7 +117,7 @@ export default function GRNForm({ prefillPoId, onBack, onSaved }) {
         supplier_id:       parseInt(form.supplier_id),
         purchase_order_id: form.purchase_order_id ? parseInt(form.purchase_order_id) : null,
         items: form.items.map(it => ({
-          product_id:             parseInt(it.product_id),
+          itemcode:               parseInt(it.itemcode),
           purchase_order_item_id: it.purchase_order_item_id || null,
           received_qty_purchase:  parseFloat(it.received_qty_purchase)||0,
           purchase_unit_type:     it.purchase_unit_type,
@@ -196,12 +213,12 @@ export default function GRNForm({ prefillPoId, onBack, onSaved }) {
                         {item.purchase_order_item_id ? (
                           <span style={{ fontFamily:MONO, fontSize:12, fontWeight:600 }}>{item.product_name}</span>
                         ) : (
-                          <select value={item.product_id}
-                                  onChange={e => updateItem(i,"product_id",e.target.value)}
+                          <select value={item.itemcode}
+                                  onChange={e => updateItem(i,"itemcode",e.target.value)}
                                   style={{ padding:"5px 7px", borderRadius:6, border:`1px solid ${BONE}`,
                                            fontFamily:MONO, fontSize:11, width:140 }}>
                             <option value="">— product —</option>
-                            {products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+                            {products.map(p=><option key={p.id} value={p.itemcode}>{p.name}</option>)}
                           </select>
                         )}
                       </td>
