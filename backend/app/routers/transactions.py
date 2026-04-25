@@ -28,7 +28,12 @@ from decimal import Decimal, ROUND_HALF_UP
 import uuid
 
 from app.core.deps import get_db, require_cashier, require_manager, get_current_employee, require_role
-from app.models.employee import Role
+from app.core.money import (
+    calculate_vat_exclusive,
+    quantize_money,
+    split_inclusive_price,
+    to_decimal_money,
+)
 from app.models.employee import Role
 from app.core.datetime_utils import merchant_today, ensure_utc_datetime, utc_to_merchant_date
 from app.models.transaction import Transaction, TransactionItem, TransactionStatus, PaymentMethod, SyncStatus
@@ -62,10 +67,10 @@ def _allocate_order_discount(items_data, subtotal_before_discount: Decimal, orde
         if order_discount <= Decimal("0.00") or subtotal_before_discount <= Decimal("0.00"):
             share = Decimal("0.00")
         elif idx == len(items_data) - 1:
-            share = (order_discount - running).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            share = quantize_money(order_discount - running)
         else:
-            share = (raw_line_total / subtotal_before_discount * order_discount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-            remaining = (order_discount - running).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            share = quantize_money(raw_line_total / subtotal_before_discount * order_discount)
+            remaining = quantize_money(order_discount - running)
             if share > remaining:
                 share = remaining
         allocations.append(share)
@@ -158,35 +163,27 @@ def _enforce_credit_sale_controls(current: Employee):
     if current.role == Role.CASHIER:
         raise HTTPException(403, "Cashiers cannot post credit sales without supervisor approval.")
 
-def _compute_line_vat(line_subtotal: Decimal, product: Product) -> Decimal:
+def _line_net_and_vat(
+    line_money: Decimal,
+    product: Product,
+    *,
+    prices_include_vat: bool,
+) -> tuple[Decimal, Decimal]:
     """
-    Compute VAT for a single line item.
+    Derive stored line net (ex-VAT) and VAT from one post-discount line amount.
 
-    PHASE P0-C: Per-Line VAT Calculation
-    ────────────────────────────────────────
-    VAT is computed individually for each line based on the line subtotal
-    (after item-level discount) and the product's tax classification.
-
-    Formula:
-        line_vat = line_subtotal * tax_rate_for_product(product)
-        (rounded to 2 decimal places using ROUND_HALF_UP)
-
-    This approach:
-      - Respects product tax classification (vat_exempt, tax_code)
-      - Avoids rounding errors when aggregating (snap each line)
-      - Makes VAT breakdown visible on receipts
-      - Supports mixed-basket transactions (some taxable, some exempt)
-
-    Args:
-        line_subtotal: Decimal subtotal for this line (after line discount, before VAT)
-        product: Product model instance (for tax classification)
-
-    Returns:
-        Decimal: VAT amount for this line (2 decimal places)
+    ``line_money`` is always the line total after line + allocated order discounts,
+    in the same semantic as ``unit_price`` on the request: gross if
+    ``prices_include_vat`` else exclusive net. VAT is never stacked twice.
     """
-    vat_rate = _tax_rate_for_product(product)
-    line_vat = (line_subtotal * vat_rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    return line_vat
+    line_money = quantize_money(line_money)
+    rate = _tax_rate_for_product(product)
+    if prices_include_vat:
+        net, vat = split_inclusive_price(line_money, rate)
+        return net, vat
+    net = line_money
+    vat = calculate_vat_exclusive(net, rate)
+    return net, vat
 
 
 @router.post("", response_model=TransactionOut)
@@ -239,7 +236,10 @@ def create_transaction(
                     f"Insufficient stock for '{product.name}': "
                     f"requested {item.qty}, available {product.stock_quantity}",
                 )
-            raw_line_total = (item.unit_price * item.qty) - item.discount
+            raw_line_total = (
+                to_decimal_money(item.unit_price) * item.qty
+                - to_decimal_money(item.discount)
+            )
             if raw_line_total < Decimal("0.00"):
                 raise HTTPException(400, f"Negative line total for product '{product.name}'")
             subtotal_before_discount += raw_line_total
@@ -260,21 +260,21 @@ def create_transaction(
         # ── 2. Calculate totals (PHASE P0-C: Per-Line VAT) ────────────────────
         # VAT is calculated per line item, not as a flat subtotal * rate.
         # This respects product tax status and creates mixed-basket integrity.
-        vat_amount   = Decimal("0.00")
         item_snapshots = []
         discount_allocations = _allocate_order_discount(items_data, subtotal_before_discount, payload.discount_amount)
+        prices_include_vat = bool(getattr(payload, "prices_include_vat", False))
         for (product, item, raw_line_total), order_discount_share in zip(items_data, discount_allocations):
-            line_total = (raw_line_total - order_discount_share).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-
-            # Compute VAT per line: uses product tax classification (exempt, tax_code)
-            # This ensures mixed baskets (taxable + exempt) compute VAT correctly
-            line_vat = _compute_line_vat(line_total, product)
-            vat_amount += line_vat
-
+            line_after_header_disc = quantize_money(raw_line_total - order_discount_share)
+            line_total, line_vat = _line_net_and_vat(
+                line_after_header_disc,
+                product,
+                prices_include_vat=prices_include_vat,
+            )
             item_snapshots.append((product, item, line_total, line_vat))
 
-        subtotal = subtotal_before_discount - payload.discount_amount
-        total = subtotal + vat_amount
+        subtotal = quantize_money(sum(t[2] for t in item_snapshots))
+        vat_amount = quantize_money(sum(t[3] for t in item_snapshots))
+        total = quantize_money(subtotal + vat_amount)
         change_given = None
 
         # ── P1-D: Reject unsupported SPLIT payment method ─────────────────────
@@ -293,7 +293,7 @@ def create_transaction(
                 )
             if not payload.cash_session_id:
                 raise HTTPException(400, "Cash sales require an open cash session")
-            change_given = (payload.cash_tendered - total).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            change_given = quantize_money(to_decimal_money(payload.cash_tendered) - total)
 
         customer = None
         next_balance = None
@@ -325,10 +325,10 @@ def create_transaction(
             txn_number      = txn_number,
             store_id        = current.store_id,
             terminal_id     = payload.terminal_id,
-            subtotal        = subtotal.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
-            discount_amount = payload.discount_amount,
-            vat_amount      = vat_amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
-            total           = total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+            subtotal        = subtotal,
+            discount_amount = quantize_money(payload.discount_amount),
+            vat_amount      = vat_amount,
+            total           = total,
             payment_method  = payload.payment_method,
             cash_tendered   = payload.cash_tendered,
             change_given    = change_given,

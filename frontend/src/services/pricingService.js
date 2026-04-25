@@ -1,67 +1,84 @@
-import { parseMoney } from "../api/client";
+import {
+  parseMoneyToCents,
+  mulCentsByQty,
+  addCents,
+  subCents,
+  splitInclusiveGrossKenya16,
+  vatOnExclusiveNetKenya16,
+  centsToDisplayNumber,
+} from "../utils/money";
 
 const VAT_RATE = 0.16;
-const PRICES_INCLUDE_VAT = true;
-
-// Utility to round money to 2 decimal places
-const roundMoney = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+/** Shelf prices are VAT-inclusive (Kenya POS); must match transaction payload `prices_include_vat`. */
+export const PRICES_INCLUDE_VAT = true;
 
 export const pricingService = {
-  // Check if item is VAT exempt
   getItemVatRate(item) {
     if (item.vat_exempt) return 0;
     if (["VAT_EXEMPT", "ZERO_RATED", "ZERO"].includes(item.tax_code)) return 0;
     return VAT_RATE;
   },
 
-  // Get inclusive price (shelf price)
   getPriceInclusive(item) {
-    return parseMoney(item.selling_price ?? item.price ?? 0);
+    return centsToDisplayNumber(parseMoneyToCents(item.selling_price ?? item.price ?? 0));
   },
 
-  // Get exclusive price (before VAT)
   getPriceExclusive(item) {
-    const inclusive = this.getPriceInclusive(item);
+    const inclusiveCents = parseMoneyToCents(item.selling_price ?? item.price ?? 0);
     const rate = this.getItemVatRate(item);
     if (PRICES_INCLUDE_VAT && rate > 0) {
-      return inclusive / (1 + rate);
+      const { netCents } = splitInclusiveGrossKenya16(inclusiveCents);
+      return centsToDisplayNumber(netCents);
     }
-    return inclusive;
+    return centsToDisplayNumber(inclusiveCents);
   },
 
-  // Get display price (always inclusive for cart)
   getDisplayPrice(item) {
-    return parseMoney(item.selling_price ?? item.price ?? 0);
+    return centsToDisplayNumber(parseMoneyToCents(item.selling_price ?? item.price ?? 0));
   },
 
-  // Calculate totals for cart
+  /**
+   * Cart totals in minor units then stable display numbers (subtotal ex-VAT, VAT, total payable).
+   */
   calculateTotals(cart) {
-    const grossSubtotalInclusive = roundMoney(
-      cart.reduce((s, i) => s + this.getPriceInclusive(i) * i.qty, 0)
-    );
+    let grossInclusiveCents = 0;
+    let vatAmountCents = 0;
+    let subtotalExCents = 0;
 
-    const vatAmount = roundMoney(
-      cart.reduce((s, i) => {
-        const inclusive = this.getPriceInclusive(i) * i.qty;
-        const rate = this.getItemVatRate(i);
-        if (PRICES_INCLUDE_VAT && rate > 0) {
-          return s + (inclusive * rate) / (1 + rate);
+    for (const i of cart) {
+      const unitCents = parseMoneyToCents(i.selling_price ?? i.price ?? 0);
+      const discCents = parseMoneyToCents(i.discount || 0);
+      const lineGrossCents = subCents(mulCentsByQty(unitCents, i.qty), discCents);
+      grossInclusiveCents = addCents(grossInclusiveCents, lineGrossCents);
+
+      const rate = this.getItemVatRate(i);
+      if (PRICES_INCLUDE_VAT) {
+        if (rate > 0) {
+          const { netCents, vatCents } = splitInclusiveGrossKenya16(lineGrossCents);
+          subtotalExCents = addCents(subtotalExCents, netCents);
+          vatAmountCents = addCents(vatAmountCents, vatCents);
+        } else {
+          subtotalExCents = addCents(subtotalExCents, lineGrossCents);
         }
-        return s + inclusive * rate;
-      }, 0)
-    );
+      } else {
+        subtotalExCents = addCents(subtotalExCents, lineGrossCents);
+        if (rate > 0) {
+          vatAmountCents = addCents(vatAmountCents, vatOnExclusiveNetKenya16(lineGrossCents));
+        }
+      }
+    }
 
-    const subtotalExVat = roundMoney(
-      PRICES_INCLUDE_VAT
-        ? grossSubtotalInclusive - vatAmount
-        : grossSubtotalInclusive
-    );
+    const totalCents = PRICES_INCLUDE_VAT ? grossInclusiveCents : addCents(subtotalExCents, vatAmountCents);
 
     return {
-      subtotalInclusive: roundMoney(grossSubtotalInclusive),
-      subtotalExclusive: subtotalExVat,
-      vatAmount: roundMoney(vatAmount),
-      total: roundMoney(grossSubtotalInclusive),
+      subtotalInclusive: centsToDisplayNumber(grossInclusiveCents),
+      subtotalExclusive: centsToDisplayNumber(subtotalExCents),
+      vatAmount: centsToDisplayNumber(vatAmountCents),
+      total: centsToDisplayNumber(totalCents),
+      totalCents,
+      subtotalExclusiveCents: subtotalExCents,
+      vatAmountCents,
+      subtotalInclusiveCents: grossInclusiveCents,
     };
   },
 };

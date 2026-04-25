@@ -237,23 +237,23 @@ def get_purchase_order_pdf(
       download=true  (default)  — User downloads the PDF file
       download=false            — Browser displays/prints the PDF
     """
-   # Add to app/services/procurement.py
-def get_po(db, po_id, store_id):
-    """Get purchase order by ID for a specific store."""
-    return _get_po(db, po_id, store_id)
+    po = svc.get_po(db, po_id, current.store_id)
     if not po:
         raise HTTPException(status_code=404, detail="PO not found")
     
     # Convert ORM model to dict for PDF service
-    po_dict = _po_out(po)  # Reuse existing _po_out function
+    po_dict = _po_out(po)
     
     # Generate PDF
     pdf_bytes = pdf_service.generate_po_pdf(
         po_dict,
         store_name=settings.STORE_NAME,
         store_location=settings.STORE_LOCATION,
-        supplier_payment_terms="Net 14 days",  # Default; could be enhanced with supplier-specific terms
+        supplier_payment_terms="Net 14 days",
     )
+    
+    if not pdf_bytes:
+        raise HTTPException(status_code=500, detail="Failed to generate PDF")
     
     filename = f"PO-{po.po_number}.pdf"
     return pdf_response(pdf_bytes, filename, download=download)
@@ -588,19 +588,16 @@ def report_open_pos(
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _po_out(po) -> POOut:
-    items = []
-    for item in po.items:
-        p = item.product
-        items.append(POOut.__fields__  # access via dict to stay flexible
-                     and POSummary)    # placeholder — use dict below
     item_list = []
     for item in po.items:
         p = item.product
         item_list.append({
             "id":                   item.id,
             "product_id":           item.product_id,
-            "product_name":         p.name if p else None,
-            "product_sku":          p.sku  if p else None,
+            "product":              {
+                "product_name":     p.name if p else None,
+                "sku":              p.sku  if p else None,
+            },
             "ordered_qty_purchase": item.ordered_qty_purchase,
             "purchase_unit_type":   item.purchase_unit_type.value
                                     if hasattr(item.purchase_unit_type, "value")
@@ -620,7 +617,12 @@ def _po_out(po) -> POOut:
         "id":            po.id,
         "store_id":      po.store_id,
         "supplier_id":   po.supplier_id,
-        "supplier_name": po.supplier.name if po.supplier else None,
+        "supplier":      {
+            "supplier_name": po.supplier.name if po.supplier else None,
+            "contact_person": po.supplier.contact_name if po.supplier else None,
+            "email":         po.supplier.email if po.supplier else None,
+            "phone_number":  po.supplier.phone if po.supplier else None,
+        },
         "po_number":     po.po_number,
         "status":        po.status.value if hasattr(po.status, "value") else po.status,
         "order_date":    po.order_date,
@@ -630,7 +632,7 @@ def _po_out(po) -> POOut:
         "subtotal":      po.subtotal,
         "tax_amount":    po.tax_amount,
         "total_amount":  po.total_amount,
-        "created_by":    po.created_by,
+        "creator":       {"display_name": "System"} if not po.created_by else {"display_name": "User"},
         "approved_by":   po.approved_by,
         "approved_at":   po.approved_at,
         "created_at":    po.created_at,
@@ -645,8 +647,10 @@ def _grn_out(grn) -> dict:
         item_list.append({
             "id":                    item.id,
             "product_id":            item.product_id,
-            "product_name":          p.name if p else None,
-            "product_sku":           p.sku  if p else None,
+            "product":               {
+                "product_name":      p.name if p else None,
+                "sku":               p.sku  if p else None,
+            },
             "purchase_order_item_id": item.purchase_order_item_id,
             "received_qty_purchase": item.received_qty_purchase,
             "purchase_unit_type":    item.purchase_unit_type.value
@@ -663,22 +667,27 @@ def _grn_out(grn) -> dict:
             "expiry_date":           item.expiry_date,
             "notes":                 item.notes,
         })
-    po_number = grn.purchase_order.po_number if grn.purchase_order else None
+    po_ref = grn.purchase_order
+    receiver = {"display_name": "Unknown"}
+    checker = {"display_name": "Unknown"}
     return {
         "id":                      grn.id,
         "store_id":                grn.store_id,
         "supplier_id":             grn.supplier_id,
-        "supplier_name":           grn.supplier.name if grn.supplier else None,
-        "purchase_order_id":       grn.purchase_order_id,
-        "po_number":               po_number,
+        "supplier":                {
+            "supplier_name":       grn.supplier.name if grn.supplier else None,
+        },
+        "purchase_order":          {
+            "po_number":           po_ref.po_number if po_ref else None,
+        } if po_ref else None,
         "grn_number":              grn.grn_number,
         "status":                  grn.status.value if hasattr(grn.status, "value") else grn.status,
         "received_date":           grn.received_date,
         "supplier_invoice_number": grn.supplier_invoice_number,
         "supplier_delivery_note":  grn.supplier_delivery_note,
         "notes":                   grn.notes,
-        "received_by":             grn.received_by,
-        "checked_by":              grn.checked_by,
+        "receiver":                receiver,
+        "checker":                 checker,
         "posted_at":               grn.posted_at,
         "created_at":              grn.created_at,
         "items":                   item_list,

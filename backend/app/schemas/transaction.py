@@ -30,6 +30,13 @@ class TransactionCreate(BaseModel):
     terminal_id:     Optional[str]   = "T01"
     items:           List[TransactionItemIn]
     payment_method:  PaymentMethod
+    prices_include_vat: bool = Field(
+        default=False,
+        description=(
+            "If True, line unit_price is VAT-inclusive (shelf/ticket gross). "
+            "If False (default), unit_price is VAT-exclusive — legacy API contract."
+        ),
+    )
     discount_amount: Decimal          = Decimal("0.00")
     cash_tendered:   Optional[Decimal]= None
     mpesa_phone:     Optional[str]   = None

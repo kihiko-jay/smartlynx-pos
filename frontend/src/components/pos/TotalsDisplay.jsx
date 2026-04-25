@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { fmtKES } from "../../api/client";
+import { fmtKESCents } from "../../utils/money";
 
-export default function TotalsDisplay({ subtotalExVat, vatAmount, total }) {
+/** Props are integer cents from pricingService.calculateTotals (avoids float in the strip). */
+export default function TotalsDisplay({ subtotalExVatCents, vatAmountCents, totalCents }) {
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < 768);
 
   useEffect(() => {
@@ -25,9 +26,9 @@ export default function TotalsDisplay({ subtotalExVat, vatAmount, total }) {
       }}
     >
       {[
-        ["Sub Total", subtotalExVat],
-        ["Sales Tax", vatAmount],
-        ["Total", total],
+        ["Sub Total", subtotalExVatCents],
+        ["Sales Tax", vatAmountCents],
+        ["Total", totalCents],
       ].map(([label, value]) => {
         const isTotal = label === "Total";
         return (
@@ -50,7 +51,7 @@ export default function TotalsDisplay({ subtotalExVat, vatAmount, total }) {
                 color: isTotal ? "#0b5ed7" : "#111827",
               }}
             >
-              {fmtKES(value)}
+              {fmtKESCents(value)}
             </div>
           </div>
         );

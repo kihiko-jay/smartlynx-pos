@@ -1,6 +1,7 @@
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 import uuid
+import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -9,9 +10,42 @@ from app.core.deps import get_db, get_current_employee, require_cashier
 from app.core.config import settings
 from app.models.employee import Employee, Role
 from app.models.cash_session import CashSession
+from app.models.audit import AuditTrail
 from app.services.accounting import post_cash_session_open, post_cash_session_close
 
 router = APIRouter(prefix="/cash-sessions", tags=["Cash Sessions"])
+logger = logging.getLogger("dukapos.cash_sessions")
+
+
+def _record_pending_accounting_post(
+    db: Session,
+    *,
+    action: str,
+    session_row: CashSession,
+    actor: Employee,
+    error: Exception,
+) -> None:
+    """
+    Persist a durable marker so failed accounting posts are visible and retryable.
+    """
+    db.add(
+        AuditTrail(
+            store_id=session_row.store_id,
+            actor_id=actor.id,
+            actor_name=actor.full_name,
+            action=action,
+            entity="cash_session",
+            entity_id=session_row.session_number,
+            before_val={"status": "pending_accounting"},
+            after_val={
+                "cash_session_id": session_row.id,
+                "cashier_id": session_row.cashier_id,
+                "terminal_id": session_row.terminal_id,
+                "status": session_row.status,
+            },
+            notes=f"accounting_retry_required: {error}",
+        )
+    )
 
 
 class CashSessionOpen(BaseModel):
@@ -63,8 +97,25 @@ def open_cash_session(
     
     try:
         post_cash_session_open(db, row)
-    except (ValueError, Exception) as e:
-        print(f"Warning: Failed to post cash session accounting entry: {e}")
+    except Exception as e:
+        logger.error(
+            "cash_session_open accounting post failed",
+            extra={
+                "session_id": row.id,
+                "session_number": row.session_number,
+                "store_id": row.store_id,
+                "cashier_id": row.cashier_id,
+                "terminal_id": row.terminal_id,
+            },
+            exc_info=True,
+        )
+        _record_pending_accounting_post(
+            db,
+            action="accounting_pending_cash_session_open",
+            session_row=row,
+            actor=current,
+            error=e,
+        )
     
     db.commit()
     db.refresh(row)
@@ -190,8 +241,25 @@ def close_cash_session(
 
     try:
         post_cash_session_close(db, row)
-    except (ValueError, Exception) as e:
-        print(f"Warning: Failed to post cash session close accounting entry: {e}")
+    except Exception as e:
+        logger.error(
+            "cash_session_close accounting post failed",
+            extra={
+                "session_id": row.id,
+                "session_number": row.session_number,
+                "store_id": row.store_id,
+                "cashier_id": row.cashier_id,
+                "terminal_id": row.terminal_id,
+            },
+            exc_info=True,
+        )
+        _record_pending_accounting_post(
+            db,
+            action="accounting_pending_cash_session_close",
+            session_row=row,
+            actor=current,
+            error=e,
+        )
     
     db.commit()
     db.refresh(row)

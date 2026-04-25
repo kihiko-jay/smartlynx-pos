@@ -1,5 +1,5 @@
 import React from "react";
-import { fmtKES, parseMoney } from "../../api/client";
+import { parseMoneyToCents, mulCentsByQty, fmtKESCents } from "../../utils/money";
 
 const emojis = {
   Dairy: "🥛",
@@ -9,7 +9,7 @@ const emojis = {
   Grocery: "🛒",
 };
 
-const getDisplayPrice = (item) => parseMoney(item.selling_price ?? item.price ?? 0);
+const unitCents = (item) => parseMoneyToCents(item.selling_price ?? item.price ?? 0);
 
 // Responsive utilities
 const BREAKPOINTS = {
@@ -118,8 +118,8 @@ export default function CartTable({
           </div>
         ) : (
           cart.map((item, idx) => {
-            const unitPrice = getDisplayPrice(item);
-            const lineTotal = unitPrice * item.qty;
+            const uCents = unitCents(item);
+            const lineTotalCents = mulCentsByQty(uCents, item.qty);
             const isEditingQty = editingQtyId === item.id;
 
             return (
@@ -179,8 +179,8 @@ export default function CartTable({
                     </button>
                   )}
                 </div>
-                {!isMobile && <div className="rms-cell" style={{ textAlign: "right", fontSize: isMobile ? 10 : 12, fontWeight: 600, paddingLeft: cellPaddingLeft, paddingRight: cellPaddingRight }}>{fmtKES(unitPrice)}</div>}
-                <div className="rms-cell" style={{ textAlign: "right", fontWeight: 800, color: "#0b5", fontSize: isMobile ? 10 : 12, paddingLeft: cellPaddingLeft, paddingRight: cellPaddingRight }}>{fmtKES(lineTotal)}</div>
+                {!isMobile && <div className="rms-cell" style={{ textAlign: "right", fontSize: isMobile ? 10 : 12, fontWeight: 600, paddingLeft: cellPaddingLeft, paddingRight: cellPaddingRight }}>{fmtKESCents(uCents)}</div>}
+                <div className="rms-cell" style={{ textAlign: "right", fontWeight: 800, color: "#0b5", fontSize: isMobile ? 10 : 12, paddingLeft: cellPaddingLeft, paddingRight: cellPaddingRight }}>{fmtKESCents(lineTotalCents)}</div>
                 <div className="rms-cell" style={{ textAlign: "center", paddingLeft: cellPaddingLeft, paddingRight: cellPaddingRight }}>
                   <button
                     onClick={(e) => {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { fmtKES } from "../../api/client";
+import { parseCashInputToCents, parseMoneyToCents, subCents, fmtKESCents } from "../../utils/money";
 import { PAYMENT_METHODS } from "../../modules/pos/paymentMethods";
 
 function buttonStyle(selected) {
@@ -37,8 +37,9 @@ export default function PaymentModal({
   const phoneInputRef = useRef(null);
   const confirmBtnRef = useRef(null);
 
-  const cashGiven = parseFloat(cashInput) || 0;
-  const change = cashGiven - total;
+  const cashCents = parseCashInputToCents(cashInput);
+  const totalCents = parseMoneyToCents(total);
+  const changeCents = subCents(cashCents, totalCents);
   const amountRequired = paymentMode === "cash";
   const phoneRequired = paymentMode === "mpesa";
 
@@ -125,7 +126,7 @@ export default function PaymentModal({
         <div style={{ padding: 12, display: "grid", gap: 10 }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800 }}>
             <span>Order Total</span>
-            <span>{fmtKES(total)}</span>
+            <span>{fmtKESCents(parseMoneyToCents(total))}</span>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
@@ -180,8 +181,8 @@ export default function PaymentModal({
               />
               <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
                 <span>Change</span>
-                <span style={{ color: change >= 0 ? "#15803d" : "#b42318" }}>
-                  {fmtKES(change)}
+                <span style={{ color: changeCents >= 0 ? "#15803d" : "#b42318" }}>
+                  {fmtKESCents(changeCents)}
                 </span>
               </div>
             </>

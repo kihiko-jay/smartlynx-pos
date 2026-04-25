@@ -1,7 +1,16 @@
-import { fmtKES } from "../../api/client";
+import { parseMoneyToCents, mulCentsByQty, subCents, fmtKESCents } from "../../utils/money";
+
+function lineTotalCentsFromItem(item) {
+  if (item.line_total != null && item.line_total !== "") {
+    return parseMoneyToCents(item.line_total);
+  }
+  const unit = parseMoneyToCents(item.unit_price || item.selling_price || item.price || 0);
+  const qty = Number(item.qty || 0);
+  const disc = parseMoneyToCents(item.discount || 0);
+  return subCents(mulCentsByQty(unit, qty), disc);
+}
 
 export const receiptFlow = {
-  // Build plain text receipt
   buildReceiptText: (receipt, storeName = "Smartlynx Store") => {
     const lines = [];
     lines.push("DUKAPOS RECEIPT");
@@ -16,35 +25,28 @@ export const receiptFlow = {
     (receipt.items || []).forEach((item) => {
       const name = item.product_name || item.name || "Item";
       const qty = item.qty || 0;
-      const lineTotal =
-        item.line_total ??
-        Number(item.unit_price || item.selling_price || item.price || 0) *
-          Number(qty);
-      lines.push(`${name} x${qty} - ${fmtKES(lineTotal)}`);
+      const lt = lineTotalCentsFromItem(item);
+      lines.push(`${name} x${qty} - ${fmtKESCents(lt)}`);
     });
 
     lines.push("");
-    lines.push(`Total: ${fmtKES(receipt.total || 0)}`);
+    lines.push(`Total: ${fmtKESCents(parseMoneyToCents(receipt.total || 0))}`);
     lines.push(`Payment: ${(receipt.payment_method || "cash").toUpperCase()}`);
     lines.push("");
     lines.push("Thank you for shopping with us");
     return lines.join("\n");
   },
 
-  // Build HTML receipt for printing
   buildReceiptHtml: (receipt, storeName = "Smartlynx Store", storeLocation = "Kenya") => {
     const itemsHtml = (receipt.items || [])
       .map((item) => {
         const name = item.product_name || item.name || "Item";
         const qty = item.qty || 0;
-        const lineTotal =
-          item.line_total ??
-          Number(item.unit_price || item.selling_price || item.price || 0) *
-            Number(qty);
+        const lt = lineTotalCentsFromItem(item);
         return `
           <div class="item">
             <div>${name}</div>
-            <div class="row"><span>${qty} x</span><span>${fmtKES(lineTotal)}</span></div>
+            <div class="row"><span>${qty} x</span><span>${fmtKESCents(lt)}</span></div>
           </div>`;
       })
       .join("");
@@ -82,11 +84,11 @@ export const receiptFlow = {
           <div class="line"></div>
           ${itemsHtml}
           <div class="line"></div>
-          <div class="row"><span>Subtotal</span><span>${fmtKES(
-            receipt.subtotal || receipt.gross_subtotal || 0
+          <div class="row"><span>Subtotal</span><span>${fmtKESCents(
+            parseMoneyToCents(receipt.subtotal ?? receipt.gross_subtotal ?? 0)
           )}</span></div>
-          <div class="row"><span>VAT</span><span>${fmtKES(receipt.vat_amount || 0)}</span></div>
-          <div class="row total"><span>TOTAL</span><span>${fmtKES(receipt.total || 0)}</span></div>
+          <div class="row"><span>VAT</span><span>${fmtKESCents(parseMoneyToCents(receipt.vat_amount || 0))}</span></div>
+          <div class="row total"><span>TOTAL</span><span>${fmtKESCents(parseMoneyToCents(receipt.total || 0))}</span></div>
           <div class="line"></div>
           <div class="center">Thank you. Please come again.</div>
         </div>
@@ -97,7 +99,6 @@ export const receiptFlow = {
     </html>`;
   },
 
-  // Open print window
   printReceipt: (receipt, storeName = "Smartlynx Store", storeLocation = "Kenya") => {
     if (!receipt) return;
     const printWindow = window.open("", "_blank", "width=360,height=700");
@@ -107,7 +108,6 @@ export const receiptFlow = {
     printWindow.document.close();
   },
 
-  // Share receipt via WhatsApp
   shareViaWhatsApp: (receipt, storeName = "Smartlynx Store") => {
     if (!receipt) return;
     const text = receiptFlow.buildReceiptText(receipt, storeName);

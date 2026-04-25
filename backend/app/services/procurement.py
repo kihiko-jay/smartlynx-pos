@@ -590,13 +590,30 @@ def post_grn(db: Session, grn_id: int, actor: Employee) -> GoodsReceivedNote:
            before={"status": "draft"},
            after={"status": "posted", "po_id": grn.purchase_order_id})
 
-    # Step 7 — auto-post to accounting ledger (non-fatal)
+    # Step 7 — auto-post to accounting ledger (non-fatal but never silent)
     try:
         _accounting_post_grn(db, grn, posted_by=actor.id)
     except Exception as acc_exc:
         logger.error(
-            "Accounting auto-post failed for GRN %s (GRN still posted): %s",
-            grn.grn_number, acc_exc,
+            "Accounting auto-post failed for posted GRN",
+            extra={
+                "grn_number": grn.grn_number,
+                "grn_id": grn.id,
+                "store_id": grn.store_id,
+                "actor_id": actor.id,
+            },
+            exc_info=True,
+        )
+        _audit(
+            db,
+            actor,
+            "accounting_pending_grn_post",
+            "grn",
+            grn.grn_number,
+            grn.store_id,
+            before={"status": "posted"},
+            after={"status": "posted", "accounting_status": "pending_retry"},
+            notes=f"accounting_retry_required: {acc_exc}",
         )
 
     logger.info("GRN %s posted by employee %d", grn.grn_number, actor.id)

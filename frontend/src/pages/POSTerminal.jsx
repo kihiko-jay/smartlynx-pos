@@ -45,6 +45,7 @@ import {
   receiptFlow,
   setupKeyboardShortcuts,
 } from "../modules/pos";
+import { parseMoneyToCents, centsToApiString } from "../utils/money";
 const isElectron =
   typeof window !== "undefined" && !!window.electron?.app?.isElectron;
 
@@ -100,7 +101,7 @@ export default function POSTerminal({ onNavigate }) {
 
     if (payment.paymentMode === "cash") {
       const validation = paymentFlow.validateCashPayment(
-        parseFloat(payment.cashInput) || 0,
+        payment.cashInput || "",
         totals.total
       );
       if (!validation.valid) {
@@ -143,12 +144,14 @@ export default function POSTerminal({ onNavigate }) {
       cart.cart,
       session.session?.terminal_id || "T01",
       payment.paymentMode,
-      parseFloat(payment.cashInput) || 0,
+      payment.cashInput || "",
       payment.mpesaPhone,
       {
         customerId: ["credit", "store_credit"].includes(payment.paymentMode) ? session.session?.customer_id || null : null,
         cashSessionId: payment.paymentMode === "cash" ? session.currentCashSession?.id || null : null,
-        discountAmount: cart.cart.reduce((sum, item) => sum + Number(item.discount || 0), 0),
+        discountAmount: centsToApiString(
+          cart.cart.reduce((sum, item) => sum + parseMoneyToCents(item.discount || 0), 0)
+        ),
       }
     );
 
@@ -753,9 +756,9 @@ export default function POSTerminal({ onNavigate }) {
           />
 
           <TotalsDisplay
-            subtotalExVat={totals.subtotalExclusive}
-            vatAmount={totals.vatAmount}
-            total={totals.total}
+            subtotalExVatCents={totals.subtotalExclusiveCents}
+            vatAmountCents={totals.vatAmountCents}
+            totalCents={totals.totalCents}
           />
         </div>
 

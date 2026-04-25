@@ -34,6 +34,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from typing import Literal, Optional
 from datetime import date, timedelta, datetime, timezone
+from decimal import Decimal
 from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
@@ -66,6 +67,12 @@ from app.models.product import Product
 from app.models.employee import Employee, Role
 from app.models.subscription import Store
 from app.core.config import settings
+from app.core.money import quantize_money
+from app.core.report_aggregates import (
+    aggregate_completed_txn_financials,
+    money_json,
+    quantize_txn_field,
+)
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 
@@ -143,26 +150,19 @@ def z_tape(
 
     target_txns = [t for t in txns if _get_transaction_merchant_date(t) == target]
 
-    # Aggregate by payment method and cashier
+    agg = aggregate_completed_txn_financials(target_txns)
+    total_count = len(target_txns)
+
+    # Aggregate by payment method and cashier (Decimal buckets → JSON at payload)
     by_method: dict[str, dict] = {}
     by_cashier: dict[int | None, dict] = {}
 
-    total_count = 0
-    gross_sales = 0.0
-    total_discounts = 0.0
-    vat_collected = 0.0
-
     for txn in target_txns:
-        total_count += 1
-        gross_sales += float(txn.total)
-        total_discounts += float(txn.discount_amount or 0)
-        vat_collected += float(txn.vat_amount or 0)
-
         method_key = txn.payment_method.value
         if method_key not in by_method:
-            by_method[method_key] = {"count": 0, "total": 0.0}
+            by_method[method_key] = {"count": 0, "total": Decimal("0")}
         by_method[method_key]["count"] += 1
-        by_method[method_key]["total"] += float(txn.total)
+        by_method[method_key]["total"] += quantize_txn_field(txn.total)
 
         cashier_id = txn.cashier_id
         if cashier_id not in by_cashier:
@@ -170,12 +170,10 @@ def z_tape(
                 "cashier_id": cashier_id,
                 "cashier_name": txn.cashier.full_name if txn.cashier else "Unknown",
                 "transaction_count": 0,
-                "total_sales": 0.0,
+                "total_sales": Decimal("0"),
             }
         by_cashier[cashier_id]["transaction_count"] += 1
-        by_cashier[cashier_id]["total_sales"] += float(txn.total)
-
-    net_sales_ex_vat = round(gross_sales - vat_collected, 2)
+        by_cashier[cashier_id]["total_sales"] += quantize_txn_field(txn.total)
 
     payload = {
         "report_type": "Z-TAPE",
@@ -185,18 +183,21 @@ def z_tape(
         "date": str(target),
         "currency": settings.CURRENCY,
         "transaction_count": total_count,
-        "gross_sales": round(gross_sales, 2),
-        "total_discounts": round(total_discounts, 2),
-        "net_sales_ex_vat": net_sales_ex_vat,
-        "vat_collected": round(vat_collected, 2),
-        "vat_rate": f"{int(settings.VAT_RATE * 100)}%",
-        "by_payment_method": {k: {"count": v["count"], "total": round(v["total"], 2)} for k, v in by_method.items()},
+        "gross_sales": money_json(agg["gross_sales"]),
+        "total_discounts": money_json(agg["total_discounts"]),
+        "net_sales_ex_vat": money_json(agg["net_sales_ex_vat"]),
+        "vat_collected": money_json(agg["vat_collected"]),
+        "vat_rate": f"{int(Decimal(str(settings.VAT_RATE)) * 100)}%",
+        "by_payment_method": {
+            k: {"count": v["count"], "total": money_json(quantize_money(v["total"]))}
+            for k, v in by_method.items()
+        },
         "cashier_breakdown": [
             {
                 "cashier_id": v["cashier_id"],
                 "cashier_name": v["cashier_name"],
                 "transaction_count": v["transaction_count"],
-                "total_sales": round(v["total_sales"], 2),
+                "total_sales": money_json(quantize_money(v["total_sales"])),
             }
             for v in by_cashier.values()
         ],
@@ -250,33 +251,43 @@ def weekly_summary(
             by_date.setdefault(merchant_date, []).append(txn)
 
     daily = []
+    week_total_dec = Decimal("0")
+    week_vat_dec = Decimal("0")
+    week_net_dec = Decimal("0")
     for i in range(7):
         day = start + timedelta(days=i)
         txns_for_day = by_date.get(day, [])
-        
+
         transaction_count = len(txns_for_day)
-        total_sales = sum(float(t.total) for t in txns_for_day)
-        vat_collected = sum(float(t.vat_amount or 0) for t in txns_for_day)
+        day_agg = aggregate_completed_txn_financials(txns_for_day)
+        total_sales = day_agg["gross_sales"]
+        vat_collected = day_agg["vat_collected"]
+        net_ex = day_agg["net_sales_ex_vat"]
+
+        week_total_dec += total_sales
+        week_vat_dec += vat_collected
+        week_net_dec += net_ex
 
         daily.append({
             "date": str(day),
             "day": day.strftime("%a"),
             "transaction_count": transaction_count,
-            "total_sales": round(total_sales, 2),
-            "vat_collected": round(vat_collected, 2),
+            "total_sales": money_json(total_sales),
+            "vat_collected": money_json(vat_collected),
         })
 
-    week_total = sum(d["total_sales"] for d in daily)
-    week_vat = sum(d["vat_collected"] for d in daily)
+    week_total_dec = quantize_money(week_total_dec)
+    week_vat_dec = quantize_money(week_vat_dec)
+    week_net_dec = quantize_money(week_net_dec)
 
     payload = {
         "report_type": "WEEKLY_SUMMARY",
         "store_name": store.name,
         "period": {"from": str(start), "to": str(end)},
         "currency": settings.CURRENCY,
-        "week_total_sales": round(week_total, 2),
-        "week_total_vat": round(week_vat, 2),
-        "week_net_sales": round(week_total - week_vat, 2),
+        "week_total_sales": money_json(week_total_dec),
+        "week_total_vat": money_json(week_vat_dec),
+        "week_net_sales": money_json(week_net_dec),
         "daily_breakdown": daily,
     }
 
@@ -327,8 +338,7 @@ def vat_report(
     target_txns = [t for t in txns if first_day <= _get_transaction_merchant_date(t) <= last_day]
 
     transaction_count = len(target_txns)
-    total_gross = sum(float(t.total) for t in target_txns)
-    total_vat = sum(float(t.vat_amount or 0) for t in target_txns)
+    vat_agg = aggregate_completed_txn_financials(target_txns)
     etims_count = sum(1 for t in target_txns if t.etims_synced)
 
     payload = {
@@ -337,10 +347,10 @@ def vat_report(
         "store_name": store.name,
         "period": f"{first_day.strftime('%B %Y')}",
         "currency": settings.CURRENCY,
-        "vat_rate": f"{int(settings.VAT_RATE * 100)}%",
-        "total_gross_sales": round(total_gross, 2),
-        "total_vat_collected": round(total_vat, 2),
-        "total_net_sales": round(total_gross - total_vat, 2),
+        "vat_rate": f"{int(Decimal(str(settings.VAT_RATE)) * 100)}%",
+        "total_gross_sales": money_json(vat_agg["gross_sales"]),
+        "total_vat_collected": money_json(vat_agg["vat_collected"]),
+        "total_net_sales": money_json(vat_agg["net_sales_ex_vat"]),
         "transaction_count": transaction_count,
         "etims_synced_count": etims_count,
     }
@@ -398,10 +408,10 @@ def top_products(
                     "product_name": item.product_name,
                     "sku": item.sku,
                     "units_sold": 0,
-                    "revenue": 0.0,
+                    "revenue": Decimal("0"),
                 }
             by_product[pid]["units_sold"] += item.qty
-            by_product[pid]["revenue"] += float(item.line_total)
+            by_product[pid]["revenue"] += quantize_txn_field(item.line_total)
 
     products = sorted(by_product.values(), key=lambda x: x["revenue"], reverse=True)[:limit]
 
@@ -413,7 +423,7 @@ def top_products(
                 "product_name": p["product_name"],
                 "sku": p["sku"],
                 "units_sold": p["units_sold"],
-                "revenue": round(p["revenue"], 2),
+                "revenue": money_json(quantize_money(p["revenue"])),
             }
             for p in products
         ],
@@ -712,20 +722,16 @@ def z_tape_pdf(
         Transaction.created_at <= end_date,
     ).all()
     
-    # Calculate totals
-    gross_sales = sum(float(t.total or 0) for t in txns)
-    vat_collected = sum(float(t.vat_amount or 0) for t in txns)
-    net_sales = gross_sales - vat_collected
+    pdf_agg = aggregate_completed_txn_financials(txns)
     transaction_count = len(txns)
-    
-    # Prepare data for PDF
+
     data = {
         "report_type": "z_tape",
         "transaction_date": target,
         "transaction_count": transaction_count,
-        "gross_sales": gross_sales,
-        "vat_collected": vat_collected,
-        "net_sales_ex_vat": net_sales,
+        "gross_sales": money_json(pdf_agg["gross_sales"]),
+        "vat_collected": money_json(pdf_agg["vat_collected"]),
+        "net_sales_ex_vat": money_json(pdf_agg["net_sales_ex_vat"]),
         "currency": settings.CURRENCY,
     }
     
@@ -768,19 +774,18 @@ def weekly_pdf(
         Transaction.created_at <= end_dt,
     ).all()
     
-    # Calculate totals
-    total_sales = sum(float(t.total or 0) for t in txns)
+    w_agg = aggregate_completed_txn_financials(txns)
+    total_sales_dec = w_agg["gross_sales"]
     transaction_count = len(txns)
     days = (end_date - start_date).days + 1
-    avg_daily = total_sales / days if days > 0 else 0
-    
-    # Prepare data for PDF
+    avg_daily_dec = quantize_money(total_sales_dec / Decimal(days)) if days > 0 else Decimal("0")
+
     data = {
         "report_type": "weekly",
         "period": {"from": start_date, "to": end_date},
         "total_transactions": transaction_count,
-        "total_sales": total_sales,
-        "average_sales_per_day": avg_daily,
+        "total_sales": money_json(total_sales_dec),
+        "average_sales_per_day": money_json(avg_daily_dec),
         "currency": settings.CURRENCY,
     }
     
@@ -832,19 +837,15 @@ def vat_pdf(
         Transaction.created_at <= end_dt,
     ).all()
     
-    # Calculate totals
-    total_sales = sum(float(t.total or 0) for t in txns)
-    total_vat = sum(float(t.vat_amount or 0) for t in txns)
-    net_sales = total_sales - total_vat
-    
-    # Prepare data for PDF
+    v_agg = aggregate_completed_txn_financials(txns)
+
     data = {
         "report_type": "vat",
         "month": month_date.strftime("%B %Y"),
-        "gross_sales": total_sales,
-        "vat_rate": int(settings.VAT_RATE * 100),
-        "vat_collected": total_vat,
-        "net_sales_ex_vat": net_sales,
+        "gross_sales": money_json(v_agg["gross_sales"]),
+        "vat_rate": int(Decimal(str(settings.VAT_RATE)) * 100),
+        "vat_collected": money_json(v_agg["vat_collected"]),
+        "net_sales_ex_vat": money_json(v_agg["net_sales_ex_vat"]),
         "currency": settings.CURRENCY,
     }
     
@@ -888,8 +889,7 @@ def top_products_pdf(
         Transaction.created_at <= end_dt,
     ).all()
     
-    # Aggregate product sales
-    product_sales = {}
+    product_sales: dict = {}
     for txn in txns:
         for item in txn.items:
             pid = item.product_id
@@ -899,25 +899,28 @@ def top_products_pdf(
                     "product_name": item.product_name,
                     "sku": item.sku,
                     "units_sold": 0,
-                    "revenue": 0,
+                    "revenue": Decimal("0"),
                 }
             product_sales[pid]["units_sold"] += int(item.qty)
-            product_sales[pid]["revenue"] += float(item.line_total)
-    
+            product_sales[pid]["revenue"] += quantize_txn_field(item.line_total)
+
     sorted_products = sorted(
         product_sales.values(),
         key=lambda x: x["revenue"],
-        reverse=True
+        reverse=True,
     )[:limit]
-    
-    total_revenue = sum(p["revenue"] for p in sorted_products)
-    
-    # Prepare data for PDF
+
+    total_revenue_dec = quantize_money(sum(p["revenue"] for p in sorted_products))
+    pdf_products = [
+        {**p, "revenue": money_json(quantize_money(p["revenue"]))}
+        for p in sorted_products
+    ]
+
     data = {
         "report_type": "top_products",
         "period": f"{start_date} to {end_date}",
-        "products": sorted_products,
-        "total_revenue": total_revenue,
+        "products": pdf_products,
+        "total_revenue": money_json(total_revenue_dec),
         "currency": settings.CURRENCY,
     }
     

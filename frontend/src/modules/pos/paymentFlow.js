@@ -1,40 +1,43 @@
 import { mpesaAPI } from "../../api/client";
-import { pricingService } from "../../services/pricingService";
+import {
+  parseCashInputToCents,
+  parseMoneyToCents,
+  subCents,
+  fmtKESCents,
+  centsToApiString,
+} from "../../utils/money";
 
 export const paymentFlow = {
-  // Handle M-Pesa push
   handleMpesaPush: async (phone, total, txnNumber) => {
     try {
-      await mpesaAPI.stkPush(phone, total, txnNumber);
+      await mpesaAPI.stkPush(phone, centsToApiString(parseMoneyToCents(total)), txnNumber);
     } catch (e) {
       throw new Error(e.message || "M-Pesa payment initiation failed");
     }
   },
 
-  // Validate cash payment
   validateCashPayment: (cashTendered, total) => {
-    const roundedCash = Math.round((Number(cashTendered) + Number.EPSILON) * 100) / 100;
-    const roundedTotal = Math.round((Number(total) + Number.EPSILON) * 100) / 100;
-    
-    if (roundedCash < roundedTotal) {
-      const { fmtKES } = require("../../api/client");
+    const cashCents = parseCashInputToCents(
+      cashTendered == null ? "" : String(cashTendered)
+    );
+    const totalCents = parseMoneyToCents(total);
+
+    if (cashCents < totalCents) {
       return {
         valid: false,
-        error: `Cash tendered (${fmtKES(roundedCash)}) is less than total (${fmtKES(roundedTotal)}). Please enter a sufficient amount.`,
+        error: `Cash tendered (${fmtKESCents(cashCents)}) is less than total (${fmtKESCents(totalCents)}). Please enter a sufficient amount.`,
       };
     }
     return { valid: true };
   },
 
-  // Check if sale can be completed
   canCompleteSale: (cart, paymentMode, cashInput, mpesaStatus, loading, total, currentCashSession) => {
-
     if (cart.length === 0 || loading) return false;
     if (paymentMode === "cash" && !currentCashSession) return false;
     if (paymentMode === "cash") {
-      const cashTendered = Math.round(parseFloat(cashInput)) || 0;
-      const roundedTotal = Math.round(total);
-      return cashTendered >= roundedTotal;
+      const cashCents = parseCashInputToCents(cashInput || "");
+      const totalCents = parseMoneyToCents(total);
+      return cashCents >= totalCents;
     }
 
     if (paymentMode === "card" || paymentMode === "credit" || paymentMode === "store_credit") return true;
@@ -46,14 +49,15 @@ export const paymentFlow = {
     return false;
   },
 
-  // Calculate change for cash payment
   calculateChange: (cashTendered, total) => {
-    const roundedCash = Math.round((Number(cashTendered) + Number.EPSILON) * 100) / 100;
-    const roundedTotal = Math.round((Number(total) + Number.EPSILON) * 100) / 100;
-    return Math.max(0, roundedCash - roundedTotal);
+    const cashCents = parseCashInputToCents(
+      cashTendered == null ? "" : String(cashTendered)
+    );
+    const totalCents = parseMoneyToCents(total);
+    const diff = subCents(cashCents, totalCents);
+    return diff > 0 ? diff / 100 : 0;
   },
 
-  // Reset payment state for new transaction
   resetPaymentState: () => ({
     paymentMode: null,
     cashInput: "",
