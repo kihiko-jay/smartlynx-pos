@@ -1,14 +1,15 @@
 /**
- * ProcurementTab — inbound inventory management
+ * ProcurementTab — inbound inventory management with tab navigation
+ *
+ * Main Tabs:
+ *   "pos"      — Purchase Orders (current & historical)
+ *   "grns"     — Goods Received Notes (GRN)
+ *   "invoices" — Invoice Matching
+ *   "supplier-payments" — Supplier Payments
  *
  * Sub-screens:
- *   "pos"      — Purchase Orders list
- *   "po-new"   — Create / Edit PO
- *   "po-view"  — PO detail + status actions
- *   "grns"     — GRN list
- *   "grn-new"  — Receive Inventory (create GRN)
- *   "grn-view" — GRN detail (print-friendly)
- *   "invoices" — Invoice Matching
+ *   PO: "po-new", "po-view"
+ *   GRN: "grn-new", "grn-view"
  */
 
 import { useState } from "react";
@@ -29,6 +30,13 @@ export default function ProcurementTab() {
   const [poId, setPoId] = useState(null);
   const [grnId, setGrnId] = useState(null);
   const [prefillPoId, setPrefillPoId] = useState(null);
+
+  // Determine current main tab
+  const mainTab = 
+    screen === "grns" || screen === "grn-new" || screen === "grn-view" ? "grns" :
+    screen === "invoices" ? "invoices" :
+    screen === "supplier-payments" || screen === "supplier-payment-new" ? "supplier-payments" :
+    "pos";
 
   const goToPOList = () => {
     setScreen("pos");
@@ -64,6 +72,10 @@ export default function ProcurementTab() {
 
   const goToInvoiceMatching = () => {
     setScreen("invoices");
+  };
+
+  const goToSupplierPayments = () => {
+    setScreen("supplier-payments");
   };
 
   const renderScreen = () => {
@@ -132,8 +144,58 @@ export default function ProcurementTab() {
     }
   };
 
+  const tabStyle = {
+    display: "flex",
+    gap: "8px",
+    borderBottom: "2px solid #e0e0e0",
+    marginBottom: "24px",
+    paddingBottom: "0",
+  };
+
+  const tabButtonStyle = (isActive) => ({
+    padding: "12px 16px",
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: isActive ? "600" : "500",
+    color: isActive ? "#1a1a1a" : "#666",
+    borderBottom: isActive ? "3px solid #2563eb" : "none",
+    marginBottom: "-2px",
+    transition: "all 0.2s",
+  });
+
   return (
     <div style={{ padding: "20px 24px" }}>
+      {/* Tab Navigation */}
+      <div style={tabStyle}>
+        <button
+          style={tabButtonStyle(mainTab === "pos")}
+          onClick={goToPOList}
+        >
+          📋 Purchase Orders
+        </button>
+        <button
+          style={tabButtonStyle(mainTab === "grns")}
+          onClick={goToGRNList}
+        >
+          📦 Goods Received (GRN)
+        </button>
+        <button
+          style={tabButtonStyle(mainTab === "invoices")}
+          onClick={goToInvoiceMatching}
+        >
+          🔗 Invoice Matching
+        </button>
+        <button
+          style={tabButtonStyle(mainTab === "supplier-payments")}
+          onClick={goToSupplierPayments}
+        >
+          💳 Supplier Payments
+        </button>
+      </div>
+
+      {/* Content Area */}
       {renderScreen()}
     </div>
   );

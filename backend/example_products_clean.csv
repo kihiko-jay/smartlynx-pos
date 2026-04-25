@@ -1,0 +1,25 @@
+sku,name,barcode,itemcode,description,category,supplier,selling_price,cost_price,vat_exempt,tax_code,stock_quantity,reorder_level,unit,is_active
+MILK-001,Fresh Milk 1L,5901234123457,1001,Fresh whole milk in 1L carton,Dairy,Fresh Dairy Ltd,150.00,95.00,no,B,100,20,liter,yes
+BREAD-001,Wheat Bread 800g,5909876543210,1002,Freshly baked wheat bread loaf,Bakery,Local Bakery,80.00,45.00,no,B,50,15,piece,yes
+RICE-001,Jasmine Rice 2kg,5912345678901,1003,Premium jasmine rice from Thailand,Grains,Agro Supplies,350.00,280.00,no,B,200,50,kg,yes
+EGGS-001,Eggs (30 pieces),5905555555555,1004,Free-range chicken eggs - 30 pack,Poultry,Poultry Farm Ltd,450.00,320.00,no,B,75,25,pack,yes
+COOKING-OIL-001,Cooking Oil 2L,5908888888888,1005,Vegetable cooking oil - 2L bottle,Cooking Essentials,Oil Distributors,280.00,200.00,no,B,60,20,liter,yes
+SUGAR-001,Sugar 1kg,5901111111111,1006,White granulated sugar,Cooking Essentials,Sugar Mills,120.00,85.00,no,B,150,40,kg,yes
+FLOUR-001,Wheat Flour 2kg,5902222222222,1007,All-purpose wheat flour,Baking Supplies,Grain Millers,180.00,130.00,no,B,200,50,kg,yes
+TEA-001,Tea Leaves (100g),5903333333333,1008,Black tea leaves,Beverages,Tea Gardens,250.00,180.00,no,B,120,30,pack,yes
+COFFEE-001,Ground Coffee 250g,5904444444444,1009,Arabica ground coffee,Beverages,Coffee Imports,350.00,250.00,no,B,80,20,pack,yes
+SALT-001,Table Salt 1kg,5906666666666,1010,Iodized table salt,Cooking Essentials,Salt Works,60.00,35.00,no,B,250,100,kg,yes
+BUTTER-001,Butter 500g,5907777777777,1011,Fresh dairy butter,Dairy,Fresh Dairy Ltd,320.00,220.00,no,B,45,15,pack,yes
+CHEESE-001,Cheese 200g,5909999999999,1012,Cheddar cheese block,Dairy,Fresh Dairy Ltd,280.00,190.00,no,B,30,10,pack,yes
+YOGURT-001,Yogurt 500ml,5910101010101,1013,Plain yogurt container,Dairy,Fresh Dairy Ltd,180.00,110.00,no,B,90,25,liter,yes
+ONIONS-001,Onions (1kg),5911111111111,1014,Red onions - fresh produce,Vegetables,Farm Direct,80.00,40.00,no,B,300,80,kg,yes
+TOMATOES-001,Tomatoes (1kg),5912222222222,1015,Fresh tomatoes - seasonal,Vegetables,Farm Direct,120.00,60.00,no,B,250,60,kg,yes
+POTATOES-001,Potatoes (2kg),5913333333333,1016,Irish potatoes - quality grade,Vegetables,Farm Direct,140.00,70.00,no,B,400,100,kg,yes
+CARROTS-001,Carrots (1kg),5914444444444,1017,Fresh orange carrots,Vegetables,Farm Direct,90.00,45.00,no,B,200,50,kg,yes
+CABBAGE-001,Cabbage (1 head),5915555555555,1018,Fresh green cabbage,Vegetables,Farm Direct,60.00,30.00,no,B,150,40,piece,yes
+APPLES-001,Apples (1kg),5916666666666,1019,Fresh red apples,Fruits,Fruit Imports,250.00,150.00,no,B,180,40,kg,yes
+BANANAS-001,Bananas (1kg),5917777777777,1020,Fresh yellow bananas,Fruits,Fruit Imports,120.00,70.00,no,B,300,80,kg,yes
+ORANGES-001,Oranges (1kg),5918888888888,1021,Fresh citrus oranges,Fruits,Fruit Imports,200.00,110.00,no,B,220,50,kg,yes
+SOAP-LAUNDRY-001,Laundry Soap Bar,5919999999999,1022,100% natural laundry soap,Household,Soap Manufacturers,80.00,45.00,no,B,500,100,pack,yes
+DETERGENT-001,Laundry Detergent 5kg,5920001010101,1023,Heavy-duty detergent powder,Household,Detergent Factory,450.00,280.00,no,B,80,20,kg,yes
+TOOTHPASTE-001,Toothpaste 100ml,5920002020202,1024,Fluoride toothpaste,Personal Care,Health & Beauty,120.00,70.00,no,B,200,50,pack,yes

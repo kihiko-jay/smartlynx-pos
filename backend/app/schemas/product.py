@@ -130,3 +130,16 @@ class SupplierListResponse(BaseModel):
     skip: int
     limit: int
 
+
+# ── CSV Import Schemas ───────────────────────────────────────────────────────
+
+class CSVImportResult(BaseModel):
+    """Response from CSV product import endpoint"""
+    success: bool
+    total_rows: int
+    created: int
+    updated: int
+    skipped: int
+    errors: List[str]
+    summary: str
+

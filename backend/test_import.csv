@@ -1,0 +1,6 @@
+sku,name,barcode,itemcode,description,category,supplier,selling_price,cost_price,vat_exempt,tax_code,stock_quantity,reorder_level,unit,is_active
+TEST-MILK-001,Test Milk 1L,6001234123457,2001,Test fresh whole milk in 1L carton,Foodstuff,Unga Limited,150.00,95.00,no,B,100,20,liter,yes
+TEST-RICE-001,Test Rice 2kg,6012345678901,2002,Test premium rice from storage,Foodstuff,General Suppliers,350.00,280.00,no,B,200,50,kg,yes
+TEST-BREAD-001,Test Wheat Bread 800g,6009876543210,2003,Test freshly baked wheat bread loaf,Foodstuff,General Suppliers,80.00,45.00,no,B,50,15,piece,yes
+TEST-OIL-001,Test Cooking Oil 2L,6008888888888,2004,Test vegetable cooking oil - 2L bottle,Foodstuff,Unga Limited,280.00,200.00,no,B,60,20,liter,yes
+TEST-SUGAR-001,Test Sugar 1kg,6001111111111,2005,Test white granulated sugar,Foodstuff,General Suppliers,120.00,85.00,no,B,150,40,kg,yes

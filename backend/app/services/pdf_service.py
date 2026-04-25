@@ -74,17 +74,29 @@ def generate_po_pdf(
     
     # Supplier details
     elements.extend(build_section_header("SUPPLIER DETAILS"))
+    # Handle both old nested structure and new flat structure
     supplier = po_dict.get("supplier", {})
+    supplier_name = supplier.get("supplier_name") if supplier else None
+    supplier_name = supplier_name or po_dict.get("supplier_name", "N/A")
+    contact_person = supplier.get("contact_person", "N/A") if supplier else "N/A"
+    email = supplier.get("email", "N/A") if supplier else "N/A"
+    phone = supplier.get("phone_number", "N/A") if supplier else "N/A"
+    
     supplier_details = [
-        ("Supplier Name", supplier.get("supplier_name", "N/A")),
-        ("Contact Person", supplier.get("contact_person", "N/A")),
-        ("Email", supplier.get("email", "N/A")),
-        ("Phone", supplier.get("phone_number", "N/A")),
+        ("Supplier Name", supplier_name),
+        ("Contact Person", contact_person),
+        ("Email", email),
+        ("Phone", phone),
     ]
+    # Handle both old "creator" and new "created_by" fields
+    creator_field = po_dict.get("creator", {})
+    created_by_name = creator_field.get("display_name") if isinstance(creator_field, dict) else "N/A"
+    created_by_name = created_by_name or "N/A"
+    
     payment_terms_info = [
         ("Payment Terms", supplier_payment_terms or "To be agreed upon"),
         ("Currency", po_dict.get("currency", "KES")),
-        ("Created By", po_dict.get("creator", {}).get("display_name", "N/A")),
+        ("Created By", created_by_name),
         ("Notes", po_dict.get("notes", "None")),
     ]
     elements.extend(build_two_column_info_table(supplier_details, payment_terms_info))
@@ -93,8 +105,13 @@ def generate_po_pdf(
     elements.extend(build_section_header("ITEMS"))
     items_rows = []
     for item in po_dict.get("items", []):
+        # Handle both old nested "product" structure and new flat structure
+        product = item.get("product", {})
+        product_name = product.get("product_name") if product else None
+        product_name = product_name or item.get("product_name", "N/A")
+        
         items_rows.append([
-            item.get("product", {}).get("product_name", "N/A"),
+            product_name,
             f"{item.get('ordered_qty_purchase', 0)} {item.get('purchase_unit_type', 'unit')}",
             f"{format_currency(item.get('unit_cost', 0))}",
             f"{format_currency(item.get('line_total', 0))}",
@@ -161,16 +178,33 @@ def generate_grn_pdf(
     
     # Supplier & receipt details
     elements.extend(build_section_header("RECEIPT DETAILS"))
+    # Handle both old nested structure and new flat structure
     supplier = grn_dict.get("supplier", {})
+    supplier_name = supplier.get("supplier_name") if supplier else None
+    supplier_name = supplier_name or grn_dict.get("supplier_name", "N/A")
+    contact_person = supplier.get("contact_person", "N/A") if supplier else "N/A"
+    email = supplier.get("email", "N/A") if supplier else "N/A"
+    
     supplier_info = [
-        ("Supplier", supplier.get("supplier_name", "N/A")),
+        ("Supplier", supplier_name),
+        ("Contact", contact_person),
+        ("Email", email),
+    ]
+    
+    # Handle receiver/checker - support both nested and direct fields
+    receiver_field = grn_dict.get("receiver", {})
+    receiver_name = receiver_field.get("display_name") if isinstance(receiver_field, dict) else "N/A"
+    receiver_name = receiver_name or "N/A"
+    
+    checker_field = grn_dict.get("checker", {})
+    checker_name = checker_field.get("display_name") if isinstance(checker_field, dict) else "N/A"
+    checker_name = checker_name or "N/A"
+    
+    receipt_info = [
+        ("Received By", receiver_name),
+        ("Checked By", checker_name),
         ("Supplier Invoice #", grn_dict.get("supplier_invoice_number", "N/A")),
         ("Delivery Note #", grn_dict.get("supplier_delivery_note", "N/A")),
-    ]
-    receipt_info = [
-        ("Received By", grn_dict.get("receiver", {}).get("display_name", "N/A")),
-        ("Checked By", grn_dict.get("checker", {}).get("display_name", "N/A")),
-        ("Notes", grn_dict.get("notes", "None")[:100]),  # Truncate long notes
     ]
     elements.extend(build_two_column_info_table(supplier_info, receipt_info))
     
@@ -178,9 +212,13 @@ def generate_grn_pdf(
     elements.extend(build_section_header("ITEMS RECEIVED"))
     items_rows = []
     for item in grn_dict.get("items", []):
+        # Handle both old nested "product" structure and new flat structure
         product = item.get("product", {})
+        product_name = product.get("product_name") if product else None
+        product_name = product_name or item.get("product_name", "N/A")
+        
         items_rows.append([
-            product.get("product_name", "N/A"),
+            product_name,
             f"{item.get('received_qty_purchase', 0)} {item.get('purchase_unit_type', 'unit')}",
             str(item.get("received_qty_base", 0)),
             str(item.get("damaged_qty_base", 0)),
@@ -201,8 +239,13 @@ def generate_grn_pdf(
         elements.extend(build_section_header("BATCH & EXPIRY TRACKING"))
         batch_rows = []
         for item in batch_items:
+            # Handle both old nested and new flat structure
+            product = item.get("product", {})
+            product_name = product.get("product_name") if product else None
+            product_name = product_name or item.get("product_name", "N/A")
+            
             batch_rows.append([
-                item.get("product", {}).get("product_name", "N/A"),
+                product_name,
                 item.get("batch_number", "N/A"),
                 item.get("expiry_date", "N/A"),
             ])

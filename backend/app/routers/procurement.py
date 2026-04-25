@@ -237,12 +237,21 @@ def get_purchase_order_pdf(
       download=true  (default)  — User downloads the PDF file
       download=false            — Browser displays/prints the PDF
     """
-    po = svc.get_po(db, po_id, current.store_id)
+    po = svc._get_po(db, po_id, current.store_id)
     if not po:
         raise HTTPException(status_code=404, detail="PO not found")
     
     # Convert ORM model to dict for PDF service
     po_dict = _po_out(po)
+    
+    # Enhance dict with supplier contact details for PDF service
+    if po.supplier:
+        po_dict["supplier"] = {
+            "supplier_name": po.supplier.name,
+            "contact_person": po.supplier.contact_name,
+            "email": po.supplier.email,
+            "phone_number": po.supplier.phone,
+        }
     
     # Generate PDF
     pdf_bytes = pdf_service.generate_po_pdf(
@@ -459,6 +468,26 @@ def get_grn_pdf(
     # Convert ORM model to dict for PDF service
     grn_dict = _grn_out(grn)
     
+    # Enhance dict with supplier contact and receiver details for PDF service
+    if grn.supplier:
+        grn_dict["supplier"] = {
+            "supplier_name": grn.supplier.name,
+            "contact_person": grn.supplier.contact_name,
+            "email": grn.supplier.email,
+            "phone_number": grn.supplier.phone,
+        }
+    
+    # Add receiver/checker employee details
+    from app.models.employee import Employee as EmpModel
+    if grn.received_by:
+        receiver_emp = db.query(EmpModel).filter(EmpModel.id == grn.received_by).first()
+        if receiver_emp:
+            grn_dict["receiver"] = {"display_name": receiver_emp.full_name}
+    if grn.checked_by:
+        checker_emp = db.query(EmpModel).filter(EmpModel.id == grn.checked_by).first()
+        if checker_emp:
+            grn_dict["checker"] = {"display_name": checker_emp.full_name}
+    
     # Generate PDF
     pdf_bytes = pdf_service.generate_grn_pdf(
         grn_dict,
@@ -594,10 +623,8 @@ def _po_out(po) -> POOut:
         item_list.append({
             "id":                   item.id,
             "product_id":           item.product_id,
-            "product":              {
-                "product_name":     p.name if p else None,
-                "sku":              p.sku  if p else None,
-            },
+            "product_name":         p.name if p else None,
+            "product_sku":          p.sku if p else None,
             "ordered_qty_purchase": item.ordered_qty_purchase,
             "purchase_unit_type":   item.purchase_unit_type.value
                                     if hasattr(item.purchase_unit_type, "value")
@@ -617,12 +644,7 @@ def _po_out(po) -> POOut:
         "id":            po.id,
         "store_id":      po.store_id,
         "supplier_id":   po.supplier_id,
-        "supplier":      {
-            "supplier_name": po.supplier.name if po.supplier else None,
-            "contact_person": po.supplier.contact_name if po.supplier else None,
-            "email":         po.supplier.email if po.supplier else None,
-            "phone_number":  po.supplier.phone if po.supplier else None,
-        },
+        "supplier_name": po.supplier.name if po.supplier else None,
         "po_number":     po.po_number,
         "status":        po.status.value if hasattr(po.status, "value") else po.status,
         "order_date":    po.order_date,
@@ -632,7 +654,7 @@ def _po_out(po) -> POOut:
         "subtotal":      po.subtotal,
         "tax_amount":    po.tax_amount,
         "total_amount":  po.total_amount,
-        "creator":       {"display_name": "System"} if not po.created_by else {"display_name": "User"},
+        "created_by":    po.created_by,
         "approved_by":   po.approved_by,
         "approved_at":   po.approved_at,
         "created_at":    po.created_at,
@@ -647,10 +669,8 @@ def _grn_out(grn) -> dict:
         item_list.append({
             "id":                    item.id,
             "product_id":            item.product_id,
-            "product":               {
-                "product_name":      p.name if p else None,
-                "sku":               p.sku  if p else None,
-            },
+            "product_name":          p.name if p else None,
+            "product_sku":           p.sku if p else None,
             "purchase_order_item_id": item.purchase_order_item_id,
             "received_qty_purchase": item.received_qty_purchase,
             "purchase_unit_type":    item.purchase_unit_type.value
@@ -667,27 +687,21 @@ def _grn_out(grn) -> dict:
             "expiry_date":           item.expiry_date,
             "notes":                 item.notes,
         })
-    po_ref = grn.purchase_order
-    receiver = {"display_name": "Unknown"}
-    checker = {"display_name": "Unknown"}
     return {
         "id":                      grn.id,
         "store_id":                grn.store_id,
         "supplier_id":             grn.supplier_id,
-        "supplier":                {
-            "supplier_name":       grn.supplier.name if grn.supplier else None,
-        },
-        "purchase_order":          {
-            "po_number":           po_ref.po_number if po_ref else None,
-        } if po_ref else None,
+        "supplier_name":           grn.supplier.name if grn.supplier else None,
+        "purchase_order_id":       grn.purchase_order_id,
+        "po_number":               grn.purchase_order.po_number if grn.purchase_order else None,
         "grn_number":              grn.grn_number,
         "status":                  grn.status.value if hasattr(grn.status, "value") else grn.status,
         "received_date":           grn.received_date,
         "supplier_invoice_number": grn.supplier_invoice_number,
         "supplier_delivery_note":  grn.supplier_delivery_note,
         "notes":                   grn.notes,
-        "receiver":                receiver,
-        "checker":                 checker,
+        "received_by":             grn.received_by,
+        "checked_by":              grn.checked_by,
         "posted_at":               grn.posted_at,
         "created_at":              grn.created_at,
         "items":                   item_list,

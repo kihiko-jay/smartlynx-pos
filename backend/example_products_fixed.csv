@@ -1,0 +1,245 @@
+sku,name,barcode,itemcode,description,category,supplier,selling_price,cost_price,vat_exempt,tax_code,stock_quantity,reorder_level,unit,is_active
+MILK-001,Fresh Milk 1L,5901234123457,1001,Fresh whole milk in 1L carton,Dairy,Fresh Dairy Ltd,150.00,95.00,no,B,100,20,liter,yes
+BREAD-001,Wheat Bread 800g,5909876543210,1002,Freshly baked wheat bread loaf,Bakery,Local Bakery,80.00,45.00,no,B,50,15,piece,yes
+RICE-001,Jasmine Rice 2kg,5912345678901,1003,Premium jasmine rice from Thailand,Grains,Agro Supplies,350.00,280.00,no,B,200,50,kg,yes
+EGGS-001,Eggs (30 pieces),5905555555555,1004,Free-range chicken eggs - 30 pack,Poultry,Poultry Farm Ltd,450.00,320.00,no,B,75,25,pack,yes
+COOKING-OIL-001,Cooking Oil 2L,5908888888888,1005,Vegetable cooking oil - 2L bottle,Cooking Essentials,Oil Distributors,280.00,200.00,no,B,60,20,liter,yes
+SUGAR-001,Sugar 1kg,5901111111111,1006,White granulated sugar,Cooking Essentials,Sugar Mills,120.00,85.00,no,B,150,40,kg,yes
+FLOUR-001,Wheat Flour 2kg,5902222222222,1007,All-purpose wheat flour,Baking Supplies,Grain Millers,180.00,130.00,no,B,200,50,kg,yes
+TEA-001,Tea Leaves (100g),5903333333333,1008,Black tea leaves,Beverages,Tea Gardens,250.00,180.00,no,B,120,30,pack,yes
+COFFEE-001,Ground Coffee 250g,5904444444444,1009,Arabica ground coffee,Beverages,Coffee Imports,350.00,250.00,no,B,80,20,pack,yes
+SALT-001,Table Salt 1kg,5906666666666,1010,Iodized table salt,Cooking Essentials,Salt Works,60.00,35.00,no,B,250,100,kg,yes
+BUTTER-001,Butter 500g,5907777777777,1011,Fresh dairy butter,Dairy,Fresh Dairy Ltd,320.00,220.00,no,B,45,15,pack,yes
+CHEESE-001,Cheese 200g,5909999999999,1012,Cheddar cheese block,Dairy,Fresh Dairy Ltd,280.00,190.00,no,B,30,10,pack,yes
+YOGURT-001,Yogurt 500ml,5910101010101,1013,Plain yogurt container,Dairy,Fresh Dairy Ltd,180.00,110.00,no,B,90,25,liter,yes
+ONIONS-001,Onions (1kg),5911111111111,1014,Red onions - fresh produce,Vegetables,Farm Direct,80.00,40.00,no,B,300,80,kg,yes
+TOMATOES-001,Tomatoes (1kg),5912222222222,1015,Fresh tomatoes - seasonal,Vegetables,Farm Direct,120.00,60.00,no,B,250,60,kg,yes
+POTATOES-001,Potatoes (2kg),5913333333333,1016,Irish potatoes - quality grade,Vegetables,Farm Direct,140.00,70.00,no,B,400,100,kg,yes
+CARROTS-001,Carrots (1kg),5914444444444,1017,Fresh orange carrots,Vegetables,Farm Direct,90.00,45.00,no,B,200,50,kg,yes
+CABBAGE-001,Cabbage (1 head),5915555555555,1018,Fresh green cabbage,Vegetables,Farm Direct,60.00,30.00,no,B,150,40,piece,yes
+APPLES-001,Apples (1kg),5916666666666,1019,Fresh red apples,Fruits,Fruit Imports,250.00,150.00,no,B,180,40,kg,yes
+BANANAS-001,Bananas (1kg),5917777777777,1020,Fresh yellow bananas,Fruits,Fruit Imports,120.00,70.00,no,B,300,80,kg,yes
+ORANGES-001,Oranges (1kg),5918888888888,1021,Fresh citrus oranges,Fruits,Fruit Imports,200.00,110.00,no,B,220,50,kg,yes
+SOAP-LAUNDRY-001,Laundry Soap Bar,5919999999999,1022,100% natural laundry soap,Household,Soap Manufacturers,80.00,45.00,no,B,500,100,pack,yes
+DETERGENT-001,Laundry Detergent 5kg,5920001010101,1023,Heavy-duty detergent powder,Household,Detergent Factory,450.00,280.00,no,B,80,20,kg,yes
+TOOTHPASTE-001,Toothpaste 100ml,5920002020202,1024,Fluoride toothpaste,Personal Care,Health & Beauty,120.00,70.00,no,B,200,50,pack,yes
+sku,name,barcode,itemcode,description,category,supplier,selling_price,cost_price,vat_exempt,tax_code,stock_quantity,reorder_level,unit,is_active
+BEV-0001,Kijani Orange Soda,620100000001,1,Kijani Orange Soda 300ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,175.00,120.00,no,B,55,15,pcs,yes
+BEV-0002,Kijani Juice,620100000002,1,Kijani Juice 1L Pack,Beverages,Mount Kenya Dairy Supply,50.00,35.00,no,B,149,12,pcs,yes
+BEV-0003,BluePeak Flavoured Water,620100000003,1,BluePeak Flavoured Water 500ml Bottle,Beverages,Metro Pharma Supply,85.00,65.00,no,B,21,17,pcs,yes
+BEV-0004,Metro Mineral Water,620100000004,1,Metro Mineral Water 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,70.00,60.00,no,B,106,15,pcs,yes
+BEV-0005,Kijani Juice,620100000005,1,Kijani Juice 1L Pack,Beverages,Mount Kenya Dairy Supply,110.00,75.00,no,B,87,13,pcs,yes
+BEV-0006,Kijani Flavoured Water,620100000006,1,Kijani Flavoured Water 500ml Bottle,Beverages,Eastern Hardware Depot,215.00,150.00,no,B,161,21,pcs,yes
+BEV-0007,Kijani Energy Drink,620100000007,1,Kijani Energy Drink 250ml Can,Beverages,Mount Kenya Dairy Supply,55.00,35.00,no,B,94,14,pcs,yes
+BEV-0008,BluePeak Orange Soda,620100000008,1,BluePeak Orange Soda 300ml Bottle,Beverages,Eastern Hardware Depot,95.00,75.00,no,B,113,17,pcs,yes
+BEV-0009,Safari Mineral Water,620100000009,1,Safari Mineral Water 500ml Bottle,Beverages,Mount Kenya Dairy Supply,160.00,125.00,no,B,38,17,pcs,yes
+BEV-0010,BluePeak Lemon Soda,620100000010,1,BluePeak Lemon Soda 500ml Bottle,Beverages,Eastern Hardware Depot,110.00,95.00,no,B,162,19,pcs,yes
+BEV-0011,Safari Soda Cola,620100000011,1,Safari Soda Cola 300ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,190.00,155.00,no,B,122,20,pcs,yes
+BEV-0012,Jambo Energy Drink,620100000012,1,Jambo Energy Drink 250ml Can,Beverages,Mount Kenya Dairy Supply,200.00,140.00,no,B,147,24,pcs,yes
+BEV-0013,Metro Lemon Soda,620100000013,1,Metro Lemon Soda 500ml Bottle,Beverages,Metro Pharma Supply,70.00,55.00,no,B,157,20,pcs,yes
+BEV-0014,Metro Juice,620100000014,1,Metro Juice 1L Pack,Beverages,Nairobi Wholesale Traders Ltd,85.00,70.00,no,B,150,27,pcs,yes
+BEV-0015,Kijani Soda Cola,620100000015,1,Kijani Soda Cola 300ml Bottle,Beverages,Metro Pharma Supply,70.00,45.00,no,B,128,14,pcs,yes
+BEV-0016,Jambo Juice,620100000016,1,Jambo Juice 1L Pack,Beverages,Nairobi Wholesale Traders Ltd,220.00,165.00,no,B,161,12,pcs,yes
+BEV-0017,Metro Flavoured Water,620100000017,1,Metro Flavoured Water 500ml Bottle,Beverages,Rift Valley Grain Supply,180.00,125.00,no,B,95,25,pcs,yes
+BEV-0018,Kijani Iced Tea,620100000018,1,Kijani Iced Tea 500ml Bottle,Beverages,Rift Valley Grain Supply,210.00,175.00,no,B,87,28,pcs,yes
+BEV-0019,Kijani Flavoured Water,620100000019,1,Kijani Flavoured Water 500ml Bottle,Beverages,Rift Valley Grain Supply,195.00,135.00,no,B,149,18,pcs,yes
+BEV-0020,Safari Mineral Water,620100000020,1,Safari Mineral Water 500ml Bottle,Beverages,Eastern Hardware Depot,140.00,110.00,no,B,155,12,pcs,yes
+BEV-0021,Kijani Iced Tea,620100000021,1,Kijani Iced Tea 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,65.00,45.00,no,B,98,19,pcs,yes
+BEV-0022,Jambo Energy Drink,620100000022,1,Jambo Energy Drink 250ml Can,Beverages,Rift Valley Grain Supply,210.00,135.00,no,B,144,14,pcs,yes
+BEV-0023,BluePeak Lemon Soda,620100000023,1,BluePeak Lemon Soda 500ml Bottle,Beverages,Mount Kenya Dairy Supply,210.00,140.00,no,B,155,25,pcs,yes
+BEV-0024,Safari Flavoured Water,620100000024,1,Safari Flavoured Water 500ml Bottle,Beverages,Mount Kenya Dairy Supply,170.00,120.00,no,B,115,26,pcs,yes
+BEV-0025,Safari Orange Soda,620100000025,1,Safari Orange Soda 300ml Bottle,Beverages,Mount Kenya Dairy Supply,85.00,60.00,no,B,170,29,pcs,yes
+BEV-0026,Kijani Energy Drink,620100000026,1,Kijani Energy Drink 250ml Can,Beverages,Nairobi Wholesale Traders Ltd,55.00,40.00,no,B,78,14,pcs,yes
+BEV-0027,Kijani Mineral Water,620100000027,1,Kijani Mineral Water 500ml Bottle,Beverages,Rift Valley Grain Supply,135.00,90.00,no,B,144,18,pcs,yes
+BEV-0028,Safari Iced Tea,620100000028,1,Safari Iced Tea 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,180.00,145.00,no,B,68,15,pcs,yes
+BEV-0029,Metro Juice,620100000029,1,Metro Juice 1L Pack,Beverages,Nairobi Wholesale Traders Ltd,120.00,85.00,no,B,33,15,pcs,yes
+BEV-0030,Metro Juice,620100000030,1,Metro Juice 1L Pack,Beverages,Mount Kenya Dairy Supply,185.00,120.00,no,B,69,18,pcs,yes
+BEV-0031,BluePeak Lemon Soda,620100000031,1,BluePeak Lemon Soda 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,75.00,55.00,no,B,39,26,pcs,yes
+BEV-0032,Jambo Soda Cola,620100000032,1,Jambo Soda Cola 300ml Bottle,Beverages,Metro Pharma Supply,190.00,160.00,no,B,80,17,pcs,yes
+BEV-0033,BluePeak Iced Tea,620100000033,1,BluePeak Iced Tea 500ml Bottle,Beverages,Metro Pharma Supply,80.00,55.00,no,B,35,17,pcs,yes
+BEV-0034,BluePeak Soda Cola,620100000034,1,BluePeak Soda Cola 300ml Bottle,Beverages,Metro Pharma Supply,90.00,70.00,no,B,136,21,pcs,yes
+BEV-0035,BluePeak Flavoured Water,620100000035,1,BluePeak Flavoured Water 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,70.00,50.00,no,B,34,30,pcs,yes
+BEV-0036,Kijani Mineral Water,620100000036,1,Kijani Mineral Water 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,55.00,40.00,no,B,155,17,pcs,yes
+BEV-0037,Kijani Flavoured Water,620100000037,1,Kijani Flavoured Water 500ml Bottle,Beverages,Metro Pharma Supply,195.00,125.00,no,B,37,19,pcs,yes
+BEV-0038,Jambo Orange Soda,620100000038,1,Jambo Orange Soda 300ml Bottle,Beverages,Metro Pharma Supply,90.00,70.00,no,B,178,14,pcs,yes
+BEV-0039,Metro Flavoured Water,620100000039,1,Metro Flavoured Water 500ml Bottle,Beverages,Kisumu Fresh Hub,210.00,140.00,no,B,100,19,pcs,yes
+BEV-0040,Safari Juice,620100000040,1,Safari Juice 1L Pack,Beverages,Nairobi Wholesale Traders Ltd,165.00,115.00,no,B,100,14,pcs,yes
+BEV-0041,Jambo Iced Tea,620100000041,1,Jambo Iced Tea 500ml Bottle,Beverages,Mount Kenya Dairy Supply,220.00,185.00,no,B,38,29,pcs,yes
+BEV-0042,Metro Flavoured Water,620100000042,1,Metro Flavoured Water 500ml Bottle,Beverages,Eastern Hardware Depot,70.00,50.00,no,B,37,19,pcs,yes
+BEV-0043,Safari Malted Drink,620100000043,1,Safari Malted Drink 330ml Can,Beverages,Nairobi Wholesale Traders Ltd,120.00,90.00,no,B,97,28,pcs,yes
+BEV-0044,Metro Flavoured Water,620100000044,1,Metro Flavoured Water 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,210.00,135.00,no,B,54,20,pcs,yes
+BEV-0045,Jambo Orange Soda,620100000045,1,Jambo Orange Soda 300ml Bottle,Beverages,Mount Kenya Dairy Supply,70.00,50.00,no,B,73,22,pcs,yes
+BEV-0046,Jambo Malted Drink,620100000046,1,Jambo Malted Drink 330ml Can,Beverages,Metro Pharma Supply,130.00,110.00,no,B,33,14,pcs,yes
+BEV-0047,Kijani Malted Drink,620100000047,1,Kijani Malted Drink 330ml Can,Beverages,Mount Kenya Dairy Supply,45.00,35.00,no,B,87,17,pcs,yes
+BEV-0048,BluePeak Flavoured Water,620100000048,1,BluePeak Flavoured Water 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,145.00,95.00,no,B,58,29,pcs,yes
+BEV-0049,Jambo Mineral Water,620100000049,1,Jambo Mineral Water 500ml Bottle,Beverages,Eastern Hardware Depot,140.00,100.00,no,B,30,21,pcs,yes
+BEV-0050,Metro Soda Cola,620100000050,1,Metro Soda Cola 300ml Bottle,Beverages,Metro Pharma Supply,80.00,55.00,no,B,46,23,pcs,yes
+BEV-0051,Safari Lemon Soda,620100000051,1,Safari Lemon Soda 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,195.00,165.00,no,B,65,25,pcs,yes
+BEV-0052,Metro Lemon Soda,620100000052,1,Metro Lemon Soda 500ml Bottle,Beverages,Rift Valley Grain Supply,180.00,130.00,no,B,83,20,pcs,yes
+BEV-0053,BluePeak Orange Soda,620100000053,1,BluePeak Orange Soda 300ml Bottle,Beverages,Mount Kenya Dairy Supply,200.00,165.00,no,B,76,18,pcs,yes
+BEV-0054,Metro Mineral Water,620100000054,1,Metro Mineral Water 500ml Bottle,Beverages,Mount Kenya Dairy Supply,190.00,155.00,no,B,77,12,pcs,yes
+BEV-0055,Metro Juice,620100000055,1,Metro Juice 1L Pack,Beverages,Metro Pharma Supply,95.00,60.00,no,B,91,23,pcs,yes
+BEV-0056,Metro Flavoured Water,620100000056,1,Metro Flavoured Water 500ml Bottle,Beverages,Kisumu Fresh Hub,210.00,135.00,no,B,86,17,pcs,yes
+BEV-0057,Kijani Soda Cola,620100000057,1,Kijani Soda Cola 300ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,150.00,105.00,no,B,100,25,pcs,yes
+BEV-0058,Jambo Juice,620100000058,1,Jambo Juice 1L Pack,Beverages,Mount Kenya Dairy Supply,80.00,50.00,no,B,131,12,pcs,yes
+BEV-0059,BluePeak Mineral Water,620100000059,1,BluePeak Mineral Water 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,55.00,45.00,no,B,104,22,pcs,yes
+BEV-0060,Jambo Malted Drink,620100000060,1,Jambo Malted Drink 330ml Can,Beverages,Rift Valley Grain Supply,100.00,70.00,no,B,123,21,pcs,yes
+BEV-0061,BluePeak Energy Drink,620100000061,1,BluePeak Energy Drink 250ml Can,Beverages,Kisumu Fresh Hub,160.00,115.00,no,B,64,30,pcs,yes
+BEV-0062,Jambo Juice,620100000062,1,Jambo Juice 1L Pack,Beverages,Eastern Hardware Depot,190.00,130.00,no,B,73,25,pcs,yes
+BEV-0063,BluePeak Iced Tea,620100000063,1,BluePeak Iced Tea 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,120.00,80.00,no,B,141,17,pcs,yes
+BEV-0064,Jambo Malted Drink,620100000064,1,Jambo Malted Drink 330ml Can,Beverages,Kisumu Fresh Hub,160.00,120.00,no,B,43,19,pcs,yes
+BEV-0065,Safari Energy Drink,620100000065,1,Safari Energy Drink 250ml Can,Beverages,Mount Kenya Dairy Supply,70.00,45.00,no,B,141,14,pcs,yes
+BEV-0066,Jambo Juice,620100000066,1,Jambo Juice 1L Pack,Beverages,Mount Kenya Dairy Supply,80.00,60.00,no,B,146,24,pcs,yes
+BEV-0067,Kijani Lemon Soda,620100000067,1,Kijani Lemon Soda 500ml Bottle,Beverages,Mount Kenya Dairy Supply,200.00,165.00,no,B,47,25,pcs,yes
+BEV-0068,Jambo Lemon Soda,620100000068,1,Jambo Lemon Soda 500ml Bottle,Beverages,Rift Valley Grain Supply,125.00,95.00,no,B,51,26,pcs,yes
+BEV-0069,Jambo Iced Tea,620100000069,1,Jambo Iced Tea 500ml Bottle,Beverages,Metro Pharma Supply,220.00,165.00,no,B,133,28,pcs,yes
+BEV-0070,BluePeak Flavoured Water,620100000070,1,BluePeak Flavoured Water 500ml Bottle,Beverages,Kisumu Fresh Hub,200.00,160.00,no,B,141,26,pcs,yes
+BEV-0071,Metro Energy Drink,620100000071,1,Metro Energy Drink 250ml Can,Beverages,Kisumu Fresh Hub,180.00,135.00,no,B,180,19,pcs,yes
+BEV-0072,Kijani Iced Tea,620100000072,1,Kijani Iced Tea 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,170.00,115.00,no,B,105,22,pcs,yes
+BEV-0073,Safari Lemon Soda,620100000073,1,Safari Lemon Soda 500ml Bottle,Beverages,Metro Pharma Supply,85.00,65.00,no,B,74,14,pcs,yes
+BEV-0074,Metro Juice,620100000074,1,Metro Juice 1L Pack,Beverages,Metro Pharma Supply,140.00,100.00,no,B,72,25,pcs,yes
+BEV-0075,Jambo Soda Cola,620100000075,1,Jambo Soda Cola 300ml Bottle,Beverages,Metro Pharma Supply,110.00,70.00,no,B,110,21,pcs,yes
+BEV-0076,Jambo Juice,620100000076,1,Jambo Juice 1L Pack,Beverages,Mount Kenya Dairy Supply,175.00,130.00,no,B,174,19,pcs,yes
+BEV-0077,Metro Energy Drink,620100000077,1,Metro Energy Drink 250ml Can,Beverages,Rift Valley Grain Supply,120.00,75.00,no,B,106,24,pcs,yes
+BEV-0078,Safari Iced Tea,620100000078,1,Safari Iced Tea 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,215.00,160.00,no,B,120,30,pcs,yes
+BEV-0079,BluePeak Orange Soda,620100000079,1,BluePeak Orange Soda 300ml Bottle,Beverages,Metro Pharma Supply,70.00,50.00,no,B,32,20,pcs,yes
+BEV-0080,Safari Mineral Water,620100000080,1,Safari Mineral Water 500ml Bottle,Beverages,Metro Pharma Supply,125.00,85.00,no,B,117,20,pcs,yes
+BEV-0081,Kijani Malted Drink,620100000081,1,Kijani Malted Drink 330ml Can,Beverages,Mount Kenya Dairy Supply,125.00,100.00,no,B,33,23,pcs,yes
+BEV-0082,Kijani Orange Soda,620100000082,1,Kijani Orange Soda 300ml Bottle,Beverages,Rift Valley Grain Supply,175.00,145.00,no,B,71,12,pcs,yes
+BEV-0083,Safari Energy Drink,620100000083,1,Safari Energy Drink 250ml Can,Beverages,Kisumu Fresh Hub,130.00,85.00,no,B,75,26,pcs,yes
+BEV-0084,Safari Mineral Water,620100000084,1,Safari Mineral Water 500ml Bottle,Beverages,Kisumu Fresh Hub,150.00,125.00,no,B,49,17,pcs,yes
+BEV-0085,Jambo Orange Soda,620100000085,1,Jambo Orange Soda 300ml Bottle,Beverages,Mount Kenya Dairy Supply,50.00,35.00,no,B,116,24,pcs,yes
+BEV-0086,Jambo Orange Soda,620100000086,1,Jambo Orange Soda 300ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,165.00,125.00,no,B,46,21,pcs,yes
+BEV-0087,Metro Soda Cola,620100000087,1,Metro Soda Cola 300ml Bottle,Beverages,Eastern Hardware Depot,140.00,110.00,no,B,37,28,pcs,yes
+BEV-0088,BluePeak Soda Cola,620100000088,1,BluePeak Soda Cola 300ml Bottle,Beverages,Rift Valley Grain Supply,190.00,120.00,no,B,112,26,pcs,yes
+BEV-0089,Safari Juice,620100000089,1,Safari Juice 1L Pack,Beverages,Mount Kenya Dairy Supply,175.00,145.00,no,B,89,29,pcs,yes
+BEV-0090,BluePeak Iced Tea,620100000090,1,BluePeak Iced Tea 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,190.00,145.00,no,B,102,19,pcs,yes
+BEV-0091,BluePeak Malted Drink,620100000091,1,BluePeak Malted Drink 330ml Can,Beverages,Eastern Hardware Depot,90.00,65.00,no,B,176,24,pcs,yes
+BEV-0092,BluePeak Soda Cola,620100000092,1,BluePeak Soda Cola 300ml Bottle,Beverages,Kisumu Fresh Hub,195.00,130.00,no,B,74,23,pcs,yes
+BEV-0093,Metro Mineral Water,620100000093,1,Metro Mineral Water 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,200.00,155.00,no,B,90,29,pcs,yes
+BEV-0094,Safari Flavoured Water,620100000094,1,Safari Flavoured Water 500ml Bottle,Beverages,Mount Kenya Dairy Supply,60.00,45.00,no,B,145,29,pcs,yes
+BEV-0095,BluePeak Iced Tea,620100000095,1,BluePeak Iced Tea 500ml Bottle,Beverages,Metro Pharma Supply,125.00,80.00,no,B,95,19,pcs,yes
+BEV-0096,Metro Energy Drink,620100000096,1,Metro Energy Drink 250ml Can,Beverages,Eastern Hardware Depot,160.00,115.00,no,B,161,28,pcs,yes
+BEV-0097,Jambo Juice,620100000097,1,Jambo Juice 1L Pack,Beverages,Kisumu Fresh Hub,105.00,80.00,no,B,89,21,pcs,yes
+BEV-0098,Kijani Energy Drink,620100000098,1,Kijani Energy Drink 250ml Can,Beverages,Mount Kenya Dairy Supply,170.00,120.00,no,B,157,17,pcs,yes
+BEV-0099,BluePeak Energy Drink,620100000099,1,BluePeak Energy Drink 250ml Can,Beverages,Nairobi Wholesale Traders Ltd,95.00,70.00,no,B,154,21,pcs,yes
+BEV-0100,Metro Energy Drink,620100000100,1,Metro Energy Drink 250ml Can,Beverages,Rift Valley Grain Supply,85.00,55.00,no,B,23,29,pcs,yes
+BEV-0101,Kijani Malted Drink,620100000101,1,Kijani Malted Drink 330ml Can,Beverages,Nairobi Wholesale Traders Ltd,215.00,160.00,no,B,52,27,pcs,yes
+BEV-0102,Jambo Soda Cola,620100000102,1,Jambo Soda Cola 300ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,95.00,70.00,no,B,107,17,pcs,yes
+BEV-0103,BluePeak Malted Drink,620100000103,1,BluePeak Malted Drink 330ml Can,Beverages,Nairobi Wholesale Traders Ltd,65.00,40.00,no,B,145,14,pcs,yes
+BEV-0104,Safari Lemon Soda,620100000104,1,Safari Lemon Soda 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,185.00,155.00,no,B,41,19,pcs,yes
+BEV-0105,BluePeak Flavoured Water,620100000105,1,BluePeak Flavoured Water 500ml Bottle,Beverages,Metro Pharma Supply,150.00,120.00,no,B,77,28,pcs,yes
+BEV-0106,BluePeak Iced Tea,620100000106,1,BluePeak Iced Tea 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,95.00,70.00,no,B,129,21,pcs,yes
+BEV-0107,Safari Orange Soda,620100000107,1,Safari Orange Soda 300ml Bottle,Beverages,Mount Kenya Dairy Supply,155.00,105.00,no,B,40,17,pcs,yes
+BEV-0108,Jambo Lemon Soda,620100000108,1,Jambo Lemon Soda 500ml Bottle,Beverages,Kisumu Fresh Hub,60.00,35.00,no,B,135,27,pcs,yes
+BEV-0109,Safari Soda Cola,620100000109,1,Safari Soda Cola 300ml Bottle,Beverages,Mount Kenya Dairy Supply,95.00,65.00,no,B,136,14,pcs,yes
+BEV-0110,Jambo Malted Drink,620100000110,1,Jambo Malted Drink 330ml Can,Beverages,Mount Kenya Dairy Supply,160.00,135.00,no,B,128,15,pcs,yes
+BEV-0111,Metro Lemon Soda,620100000111,1,Metro Lemon Soda 500ml Bottle,Beverages,Kisumu Fresh Hub,190.00,120.00,no,B,62,21,pcs,yes
+BEV-0112,Kijani Iced Tea,620100000112,1,Kijani Iced Tea 500ml Bottle,Beverages,Mount Kenya Dairy Supply,125.00,85.00,no,B,123,20,pcs,yes
+BEV-0113,Kijani Iced Tea,620100000113,1,Kijani Iced Tea 500ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,150.00,125.00,no,B,102,20,pcs,yes
+BEV-0114,Safari Orange Soda,620100000114,1,Safari Orange Soda 300ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,215.00,175.00,no,B,167,30,pcs,yes
+BEV-0115,Jambo Malted Drink,620100000115,1,Jambo Malted Drink 330ml Can,Beverages,Mount Kenya Dairy Supply,50.00,40.00,no,B,140,28,pcs,yes
+BEV-0116,Safari Malted Drink,620100000116,1,Safari Malted Drink 330ml Can,Beverages,Mount Kenya Dairy Supply,220.00,160.00,no,B,145,14,pcs,yes
+BEV-0117,BluePeak Mineral Water,620100000117,1,BluePeak Mineral Water 500ml Bottle,Beverages,Metro Pharma Supply,105.00,80.00,no,B,61,22,pcs,yes
+BEV-0118,Metro Iced Tea,620100000118,1,Metro Iced Tea 500ml Bottle,Beverages,Mount Kenya Dairy Supply,160.00,115.00,no,B,160,13,pcs,yes
+BEV-0119,Metro Orange Soda,620100000119,1,Metro Orange Soda 300ml Bottle,Beverages,Nairobi Wholesale Traders Ltd,90.00,60.00,no,B,123,28,pcs,yes
+BEV-0120,BluePeak Flavoured Water,620100000120,1,BluePeak Flavoured Water 500ml Bottle,Beverages,Mount Kenya Dairy Supply,115.00,75.00,no,B,112,27,pcs,yes
+SNA-0001,Cheza Potato Crisps,620200000001,2,Cheza Potato Crisps 50g,Snacks,Mount Kenya Dairy Supply,65.00,40.00,no,B,93,24,pcs,yes
+SNA-0002,Crunchy Cheese Puffs,620200000002,2,Crunchy Cheese Puffs 45g,Snacks,Kisumu Fresh Hub,175.00,135.00,no,B,81,15,pcs,yes
+SNA-0003,Crunchy Pretzels,620200000003,2,Crunchy Pretzels 60g,Snacks,Nairobi Wholesale Traders Ltd,110.00,70.00,no,B,49,24,pcs,yes
+SNA-0004,Nibble Biscuits,620200000004,2,Nibble Biscuits 200g,Snacks,Mount Kenya Dairy Supply,170.00,115.00,no,B,89,23,pcs,yes
+SNA-0005,Cheza Candy Mix,620200000005,2,Cheza Candy Mix 90g,Snacks,Nairobi Wholesale Traders Ltd,95.00,60.00,no,B,68,14,pcs,yes
+SNA-0006,Nibble Groundnuts,620200000006,2,Nibble Groundnuts 100g,Snacks,Kisumu Fresh Hub,75.00,60.00,no,B,88,10,pcs,yes
+SNA-0007,Tastee Groundnuts,620200000007,2,Tastee Groundnuts 100g,Snacks,Mount Kenya Dairy Supply,115.00,90.00,no,B,58,24,pcs,yes
+SNA-0008,Safari Popcorn,620200000008,2,Safari Popcorn 80g,Snacks,Mount Kenya Dairy Supply,110.00,80.00,no,B,136,20,pcs,yes
+SNA-0009,Tastee Chocolate Wafer,620200000009,2,Tastee Chocolate Wafer 100g,Snacks,Eastern Hardware Depot,80.00,65.00,no,B,125,11,pcs,yes
+SNA-0010,Nibble Candy Mix,620200000010,2,Nibble Candy Mix 90g,Snacks,Nairobi Wholesale Traders Ltd,80.00,60.00,no,B,58,25,pcs,yes
+SNA-0011,Tastee Biscuits,620200000011,2,Tastee Biscuits 200g,Snacks,Nairobi Wholesale Traders Ltd,175.00,120.00,no,B,45,24,pcs,yes
+SNA-0012,Nibble Pretzels,620200000012,2,Nibble Pretzels 60g,Snacks,Mount Kenya Dairy Supply,20.00,15.00,no,B,59,12,pcs,yes
+SNA-0013,Safari Groundnuts,620200000013,2,Safari Groundnuts 100g,Snacks,Metro Pharma Supply,120.00,85.00,no,B,40,20,pcs,yes
+SNA-0014,Nibble Popcorn,620200000014,2,Nibble Popcorn 80g,Snacks,Kisumu Fresh Hub,160.00,100.00,no,B,37,17,pcs,yes
+SNA-0015,Crunchy Chocolate Wafer,620200000015,2,Crunchy Chocolate Wafer 100g,Snacks,Rift Valley Grain Supply,90.00,60.00,no,B,45,24,pcs,yes
+SNA-0016,Crunchy Groundnuts,620200000016,2,Crunchy Groundnuts 100g,Snacks,Eastern Hardware Depot,25.00,20.00,no,B,95,21,pcs,yes
+SNA-0017,Cheza Cookies,620200000017,2,Cheza Cookies 150g,Snacks,Rift Valley Grain Supply,60.00,45.00,no,B,66,15,pcs,yes
+SNA-0018,Tastee Cheese Puffs,620200000018,2,Tastee Cheese Puffs 45g,Snacks,Rift Valley Grain Supply,160.00,120.00,no,B,81,25,pcs,yes
+SNA-0019,Nibble Chocolate Wafer,620200000019,2,Nibble Chocolate Wafer 100g,Snacks,Kisumu Fresh Hub,120.00,85.00,no,B,22,24,pcs,yes
+SNA-0020,Cheza Pretzels,620200000020,2,Cheza Pretzels 60g,Snacks,Kisumu Fresh Hub,30.00,25.00,no,B,96,23,pcs,yes
+SNA-0021,Safari Candy Mix,620200000021,2,Safari Candy Mix 90g,Snacks,Mount Kenya Dairy Supply,50.00,35.00,no,B,143,13,pcs,yes
+SNA-0022,Tastee Cookies,620200000022,2,Tastee Cookies 150g,Snacks,Metro Pharma Supply,75.00,50.00,no,B,95,10,pcs,yes
+SNA-0023,Crunchy Groundnuts,620200000023,2,Crunchy Groundnuts 100g,Snacks,Kisumu Fresh Hub,110.00,85.00,no,B,32,25,pcs,yes
+SNA-0024,Tastee Chocolate Wafer,620200000024,2,Tastee Chocolate Wafer 100g,Snacks,Rift Valley Grain Supply,150.00,100.00,no,B,68,18,pcs,yes
+SNA-0025,Crunchy Cheese Puffs,620200000025,2,Crunchy Cheese Puffs 45g,Snacks,Nairobi Wholesale Traders Ltd,70.00,50.00,no,B,113,14,pcs,yesSNA-0026,Safari Groundnuts,620200000026,2,Safari Groundnuts 100g,Snacks,Kisumu Fresh Hub,140.00,90.00,no,B,53,21,pcs,yes
+SNA-0027,Safari Biscuits,620200000027,2,Safari Biscuits 200g,Snacks,Nairobi Wholesale Traders Ltd,165.00,140.00,no,B,95,20,pcs,yes
+SNA-0028,Crunchy Candy Mix,620200000028,2,Crunchy Candy Mix 90g,Snacks,Nairobi Wholesale Traders Ltd,45.00,40.00,no,B,121,21,pcs,yes
+SNA-0029,Crunchy Cookies,620200000029,2,Crunchy Cookies 150g,Snacks,Metro Pharma Supply,60.00,40.00,no,B,114,18,pcs,yes
+SNA-0030,Crunchy Popcorn,620200000030,2,Crunchy Popcorn 80g,Snacks,Nairobi Wholesale Traders Ltd,130.00,95.00,no,B,103,17,pcs,yes
+SNA-0031,Safari Candy Mix,620200000031,2,Safari Candy Mix 90g,Snacks,Kisumu Fresh Hub,125.00,80.00,no,B,31,11,pcs,yes
+SNA-0032,Crunchy Candy Mix,620200000032,2,Crunchy Candy Mix 90g,Snacks,Mount Kenya Dairy Supply,35.00,30.00,no,B,54,22,pcs,yes
+SNA-0033,Tastee Popcorn,620200000033,2,Tastee Popcorn 80g,Snacks,Nairobi Wholesale Traders Ltd,85.00,65.00,no,B,59,23,pcs,yes
+SNA-0034,Tastee Candy Mix,620200000034,2,Tastee Candy Mix 90g,Snacks,Mount Kenya Dairy Supply,85.00,70.00,no,B,28,21,pcs,yes
+SNA-0035,Nibble Candy Mix,620200000035,2,Nibble Candy Mix 90g,Snacks,Eastern Hardware Depot,170.00,140.00,no,B,45,21,pcs,yes
+SNA-0036,Nibble Potato Crisps,620200000036,2,Nibble Potato Crisps 50g,Snacks,Mount Kenya Dairy Supply,65.00,55.00,no,B,136,12,pcs,yes
+SNA-0037,Crunchy Potato Crisps,620200000037,2,Crunchy Potato Crisps 50g,Snacks,Nairobi Wholesale Traders Ltd,145.00,100.00,no,B,52,16,pcs,yes
+SNA-0038,Cheza Pretzels,620200000038,2,Cheza Pretzels 60g,Snacks,Rift Valley Grain Supply,115.00,95.00,no,B,79,20,pcs,yes
+SNA-0039,Safari Potato Crisps,620200000039,2,Safari Potato Crisps 50g,Snacks,Rift Valley Grain Supply,155.00,100.00,no,B,53,18,pcs,yes
+SNA-0040,Crunchy Cheese Puffs,620200000040,2,Crunchy Cheese Puffs 45g,Snacks,Nairobi Wholesale Traders Ltd,40.00,30.00,no,B,80,20,pcs,yes
+SNA-0041,Safari Biscuits,620200000041,2,Safari Biscuits 200g,Snacks,Mount Kenya Dairy Supply,30.00,25.00,no,B,49,12,pcs,yes
+SNA-0042,Safari Candy Mix,620200000042,2,Safari Candy Mix 90g,Snacks,Nairobi Wholesale Traders Ltd,100.00,65.00,no,B,148,17,pcs,yes
+SNA-0043,Safari Pretzels,620200000043,2,Safari Pretzels 60g,Snacks,Metro Pharma Supply,95.00,80.00,no,B,35,25,pcs,yes
+SNA-0044,Crunchy Cookies,620200000044,2,Crunchy Cookies 150g,Snacks,Eastern Hardware Depot,100.00,85.00,no,B,38,12,pcs,yes
+SNA-0045,Crunchy Biscuits,620200000045,2,Crunchy Biscuits 200g,Snacks,Kisumu Fresh Hub,40.00,30.00,no,B,103,22,pcs,yes
+SNA-0046,Tastee Candy Mix,620200000046,2,Tastee Candy Mix 90g,Snacks,Metro Pharma Supply,115.00,75.00,no,B,49,16,pcs,yes
+SNA-0047,Cheza Candy Mix,620200000047,2,Cheza Candy Mix 90g,Snacks,Nairobi Wholesale Traders Ltd,85.00,70.00,no,B,122,23,pcs,yes
+SNA-0048,Nibble Popcorn,620200000048,2,Nibble Popcorn 80g,Snacks,Nairobi Wholesale Traders Ltd,70.00,50.00,no,B,59,25,pcs,yes
+SNA-0049,Crunchy Cheese Puffs,620200000049,2,Crunchy Cheese Puffs 45g,Snacks,Nairobi Wholesale Traders Ltd,35.00,20.00,no,B,115,14,pcs,yes
+SNA-0050,Tastee Pretzels,620200000050,2,Tastee Pretzels 60g,Snacks,Nairobi Wholesale Traders Ltd,75.00,50.00,no,B,110,23,pcs,yes
+SNA-0051,Tastee Groundnuts,620200000051,2,Tastee Groundnuts 100g,Snacks,Rift Valley Grain Supply,70.00,45.00,no,B,149,16,pcs,yes
+SNA-0052,Cheza Candy Mix,620200000052,2,Cheza Candy Mix 90g,Snacks,Kisumu Fresh Hub,155.00,110.00,no,B,114,13,pcs,yes
+SNA-0053,Nibble Chocolate Wafer,620200000053,2,Nibble Chocolate Wafer 100g,Snacks,Nairobi Wholesale Traders Ltd,155.00,130.00,no,B,26,18,pcs,yes
+SNA-0054,Safari Biscuits,620200000054,2,Safari Biscuits 200g,Snacks,Nairobi Wholesale Traders Ltd,130.00,90.00,no,B,106,21,pcs,yes
+SNA-0055,Cheza Biscuits,620200000055,2,Cheza Biscuits 200g,Snacks,Nairobi Wholesale Traders Ltd,110.00,80.00,no,B,56,10,pcs,yes
+SNA-0056,Cheza Pretzels,620200000056,2,Cheza Pretzels 60g,Snacks,Kisumu Fresh Hub,80.00,60.00,no,B,60,21,pcs,yes
+SNA-0057,Tastee Popcorn,620200000057,2,Tastee Popcorn 80g,Snacks,Nairobi Wholesale Traders Ltd,115.00,95.00,no,B,59,15,pcs,yes
+SNA-0058,Safari Cheese Puffs,620200000058,2,Safari Cheese Puffs 45g,Snacks,Kisumu Fresh Hub,90.00,65.00,no,B,133,23,pcs,yes
+SNA-0059,Tastee Chocolate Wafer,620200000059,2,Tastee Chocolate Wafer 100g,Snacks,Kisumu Fresh Hub,40.00,30.00,no,B,92,25,pcs,yes
+SNA-0060,Cheza Potato Crisps,620200000060,2,Cheza Potato Crisps 50g,Snacks,Kisumu Fresh Hub,85.00,65.00,no,B,21,16,pcs,yes
+SNA-0061,Cheza Chocolate Wafer,620200000061,2,Cheza Chocolate Wafer 100g,Snacks,Mount Kenya Dairy Supply,140.00,95.00,no,B,50,10,pcs,yes
+SNA-0062,Cheza Cookies,620200000062,2,Cheza Cookies 150g,Snacks,Nairobi Wholesale Traders Ltd,40.00,30.00,no,B,78,21,pcs,yes
+SNA-0063,Crunchy Cookies,620200000063,2,Crunchy Cookies 150g,Snacks,Metro Pharma Supply,90.00,65.00,no,B,39,20,pcs,yes
+SNA-0064,Nibble Cookies,620200000064,2,Nibble Cookies 150g,Snacks,Mount Kenya Dairy Supply,65.00,45.00,no,B,103,15,pcs,yes
+SNA-0065,Crunchy Popcorn,620200000065,2,Crunchy Popcorn 80g,Snacks,Nairobi Wholesale Traders Ltd,90.00,60.00,no,B,131,22,pcs,yes
+SNA-0066,Safari Cookies,620200000066,2,Safari Cookies 150g,Snacks,Nairobi Wholesale Traders Ltd,140.00,95.00,no,B,63,12,pcs,yes
+SNA-0067,Tastee Pretzels,620200000067,2,Tastee Pretzels 60g,Snacks,Mount Kenya Dairy Supply,50.00,40.00,no,B,109,14,pcs,yes
+SNA-0068,Cheza Cheese Puffs,620200000068,2,Cheza Cheese Puffs 45g,Snacks,Rift Valley Grain Supply,60.00,40.00,no,B,59,12,pcs,yes
+SNA-0069,Nibble Candy Mix,620200000069,2,Nibble Candy Mix 90g,Snacks,Eastern Hardware Depot,140.00,110.00,no,B,134,20,pcs,yes
+SNA-0070,Nibble Biscuits,620200000070,2,Nibble Biscuits 200g,Snacks,Nairobi Wholesale Traders Ltd,30.00,20.00,no,B,97,18,pcs,yes
+SNA-0071,Tastee Popcorn,620200000071,2,Tastee Popcorn 80g,Snacks,Eastern Hardware Depot,30.00,20.00,no,B,29,11,pcs,yes
+SNA-0072,Crunchy Groundnuts,620200000072,2,Crunchy Groundnuts 100g,Snacks,Mount Kenya Dairy Supply,125.00,105.00,no,B,43,22,pcs,yes
+SNA-0073,Crunchy Pretzels,620200000073,2,Crunchy Pretzels 60g,Snacks,Mount Kenya Dairy Supply,90.00,75.00,no,B,68,20,pcs,yes
+SNA-0074,Cheza Pretzels,620200000074,2,Cheza Pretzels 60g,Snacks,Rift Valley Grain Supply,175.00,125.00,no,B,107,12,pcs,yes
+SNA-0075,Cheza Potato Crisps,620200000075,2,Cheza Potato Crisps 50g,Snacks,Eastern Hardware Depot,135.00,115.00,no,B,60,21,pcs,yes
+SNA-0076,Nibble Groundnuts,620200000076,2,Nibble Groundnuts 100g,Snacks,Nairobi Wholesale Traders Ltd,85.00,60.00,no,B,33,20,pcs,yes
+SNA-0077,Crunchy Popcorn,620200000077,2,Crunchy Popcorn 80g,Snacks,Eastern Hardware Depot,110.00,80.00,no,B,84,14,pcs,yes
+SNA-0078,Tastee Cheese Puffs,620200000078,2,Tastee Cheese Puffs 45g,Snacks,Rift Valley Grain Supply,125.00,105.00,no,B,99,22,pcs,yes
+SNA-0079,Safari Cheese Puffs,620200000079,2,Safari Cheese Puffs 45g,Snacks,Nairobi Wholesale Traders Ltd,110.00,85.00,no,B,104,14,pcs,yes
+SNA-0080,Tastee Cookies,620200000080,2,Tastee Cookies 150g,Snacks,Eastern Hardware Depot,80.00,55.00,no,B,66,16,pcs,yes
+SNA-0081,Cheza Candy Mix,620200000081,2,Cheza Candy Mix 90g,Snacks,Nairobi Wholesale Traders Ltd,55.00,35.00,no,B,39,19,pcs,yes
+SNA-0082,Tastee Pretzels,620200000082,2,Tastee Pretzels 60g,Snacks,Rift Valley Grain Supply,155.00,130.00,no,B,29,20,pcs,yes
+SNA-0083,Cheza Cookies,620200000083,2,Cheza Cookies 150g,Snacks,Nairobi Wholesale Traders Ltd,45.00,35.00,no,B,62,24,pcs,yes
+SNA-0084,Safari Cookies,620200000084,2,Safari Cookies 150g,Snacks,Mount Kenya Dairy Supply,130.00,90.00,no,B,133,19,pcs,yes
+SNA-0085,Tastee Chocolate Wafer,620200000085,2,Tastee Chocolate Wafer 100g,Snacks,Eastern Hardware Depot,60.00,50.00,no,B,140,16,pcs,yes
+SNA-0086,Nibble Candy Mix,620200000086,2,Nibble Candy Mix 90g,Snacks,Rift Valley Grain Supply,145.00,115.00,no,B,148,23,pcs,yes
+SNA-0087,Tastee Chocolate Wafer,620200000087,2,Tastee Chocolate Wafer 100g,Snacks,Nairobi Wholesale Traders Ltd,40.00,25.00,no,B,143,21,pcs,yes
+SNA-0088,Crunchy Pretzels,620200000088,2,Crunchy Pretzels 60g,Snacks,Rift Valley Grain Supply,65.00,50.00,no,B,89,24,pcs,yes
+SNA-0089,Crunchy Cookies,620200000089,2,Crunchy Cookies 150g,Snacks,Nairobi Wholesale Traders Ltd,170.00,115.00,no,B,135,21,pcs,yes
+SNA-0090,Crunchy Cookies,620200000090,2,Crunchy Cookies 150g,Snacks,Eastern Hardware Depot,85.00,60.00,no,B,118,12,pcs,yes
+HOU-0001,Safi Bleach,620300000001,3,Safi Bleach 1L,Household,Rift Valley Grain Supply,295.00,190.00,no,B,52,18,pcs,yes
+HOU-0002,Safi Dishwashing Liquid,620300000002,3,Safi Dishwashing Liquid 750ml,Household,Mount Kenya Dairy Supply,270.00,220.00,no,B,27,18,pcs,yes
+HOU-0003,Mwangaza Laundry Soap,620300000003,3,Mwangaza Laundry Soap 1kg,Household,Rift Valley Grain Supply,85.00,55.00,no,B,42,9,pcs,yes
+HOU-0004,Mwangaza Mop Refill,620300000004,3,Mwangaza Mop Refill 1pc,Household,Kisumu Fresh Hub,435.00,280.00,no,B,46,9,pcs,yes
+HOU-0005,Safi Detergent Powder,620300000005,3,Safi Detergent Powder 1kg,Household,Nairobi Wholesale Traders Ltd,240.00,185.00,no,B,68,7,pcs,yes
+HOU-0006,Mwangaza Laundry Soap,620300000006,3,Mwangaza Laundry Soap 1kg,Household,Rift Valley Grain Supply,440.00,335.00,no,B,40,17,pcs,yes
+HOU-0007,Jikaze Toilet Tissue,620300000007,3,Jikaze Toilet Tissue 10 Pack,Household,Nairobi Wholesale Traders Ltd,80.00,55.00,no,B,63,8,pcs,yes
+HOU-0008,FreshHome Mop Refill,620300000008,3,FreshHome Mop Refill 1pc,Household,Nairobi Wholesale Traders Ltd,125.00,95.00,no,B,74,18,pcs,yes
+HOU-0009,Jikaze Surface Cleaner,620300000009,3,Jikaze Surface Cleaner 500ml,Household,Nairobi Wholesale Traders Ltd,110.00,80.00,no,B,57,10,pcs,yes
+HOU-0010,Safi Air Freshener,620300000010,3,Safi Air Freshener 300ml,Household,Eastern Hardware Depot,310.00,245.00,no,B,23,18,pcs,yes

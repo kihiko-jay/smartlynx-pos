@@ -8,7 +8,10 @@ Updates:
 """
 
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Query
+import csv
+import io
+from decimal import Decimal
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, cast, String
 from typing import List, Optional
@@ -32,6 +35,7 @@ from app.schemas.product import (
     SupplierCreate, SupplierOut,
     StockAdjustment,
     ProductListResponse, CategoryListResponse, SupplierListResponse,
+    CSVImportResult,
 )
 
 logger = logging.getLogger("dukapos.products")
@@ -548,3 +552,291 @@ def stock_history(
         ],
         "total_movements": total_movements,
     }
+
+
+# ── CSV Import ─────────────────────────────────────────────────────────────────
+
+@router.post("/import/csv", response_model=CSVImportResult)
+async def import_products_csv(
+    file: UploadFile = File(...),
+    update_existing: bool = Query(False),
+    db: Session = Depends(get_db),
+    current: Employee = Depends(require_premium),
+):
+    """
+    Import products from CSV file.
+
+    CSV columns (comma-separated):
+    - sku (required): Product code
+    - name (required): Product name
+    - selling_price (required): Retail price
+    - barcode (optional): EAN/UPC
+    - itemcode (optional): Numeric code
+    - description (optional): Product description
+    - category (optional): Category name (must exist)
+    - supplier (optional): Supplier name (must exist)
+    - cost_price (optional): Product cost
+    - vat_exempt (optional): yes/no/true/false
+    - tax_code (optional): A or B
+    - stock_quantity (optional): Initial stock
+    - reorder_level (optional): Low stock threshold
+    - unit (optional): piece/kg/liter/pack (default: piece)
+    - is_active (optional): yes/no/true/false
+
+    Returns:
+    - success: True if import completed
+    - created: Number of new products
+    - updated: Number of updated products
+    - skipped: Number of skipped rows
+    - errors: List of error messages
+    - summary: Human-readable summary
+    """
+    if current.role not in {Role.SUPERVISOR, Role.MANAGER, Role.ADMIN, Role.PLATFORM_OWNER}:
+        raise HTTPException(403, "CSV import requires supervisor or higher")
+
+    try:
+        # Read CSV file
+        content = await file.read()
+        text_content = content.decode('utf-8')
+        reader = csv.DictReader(io.StringIO(text_content))
+
+        if not reader.fieldnames:
+            raise ValueError("CSV file is empty or has no header row")
+
+        # Build caches
+        categories = db.query(Category).filter(Category.store_id == current.store_id).all()
+        category_cache = {cat.name.lower(): cat.id for cat in categories}
+
+        suppliers = db.query(Supplier).filter(Supplier.store_id == current.store_id).all()
+        supplier_cache = {sup.name.lower(): sup.id for sup in suppliers}
+
+        result = {
+            'success': True,
+            'total_rows': 0,
+            'created': 0,
+            'updated': 0,
+            'skipped': 0,
+            'errors': [],
+            'summary': '',
+        }
+
+        seen_skus = set()
+
+        for row_num, row in enumerate(reader, start=2):
+            try:
+                result['total_rows'] += 1
+                
+                # Validate required fields
+                sku = str(row.get('sku', '').strip())
+                if not sku:
+                    raise ValueError("SKU is required")
+
+                name = str(row.get('name', '').strip())
+                if not name:
+                    raise ValueError("Product name is required")
+
+                selling_price_str = row.get('selling_price', '').strip()
+                if not selling_price_str:
+                    raise ValueError("Selling price is required")
+
+                # Check for duplicates
+                if sku in seen_skus:
+                    raise ValueError(f"Duplicate SKU in CSV: '{sku}'")
+                seen_skus.add(sku)
+
+                # Parse prices
+                try:
+                    selling_price = Decimal(str(selling_price_str)).quantize(Decimal('0.01'))
+                except (ValueError, TypeError):
+                    raise ValueError(f"Selling price must be a decimal number")
+
+                cost_price = None
+                cost_str = row.get('cost_price', '').strip()
+                if cost_str:
+                    try:
+                        cost_price = Decimal(str(cost_str)).quantize(Decimal('0.01'))
+                    except (ValueError, TypeError):
+                        raise ValueError("Cost price must be a decimal number")
+
+                # Parse category
+                category_id = None
+                cat_name = row.get('category', '').strip()
+                if cat_name:
+                    category_id = category_cache.get(cat_name.lower())
+                    if category_id is None:
+                        raise ValueError(f"Category '{cat_name}' not found")
+
+                # Parse supplier
+                supplier_id = None
+                sup_name = row.get('supplier', '').strip()
+                if sup_name:
+                    supplier_id = supplier_cache.get(sup_name.lower())
+                    if supplier_id is None:
+                        raise ValueError(f"Supplier '{sup_name}' not found")
+
+                # Parse other fields
+                barcode = row.get('barcode', '').strip() or None
+                description = row.get('description', '').strip() or None
+
+                itemcode = None
+                itemcode_str = row.get('itemcode', '').strip()
+                if itemcode_str:
+                    try:
+                        itemcode = int(itemcode_str)
+                    except ValueError:
+                        raise ValueError("itemcode must be an integer")
+
+                vat_exempt = False
+                vat_str = row.get('vat_exempt', 'no').strip().lower()
+                if vat_str in ('yes', 'y', '1', 'true'):
+                    vat_exempt = True
+
+                tax_code = row.get('tax_code', 'B').strip().upper()
+                if tax_code not in ('A', 'B'):
+                    tax_code = 'B'
+
+                stock_quantity = 0
+                stock_str = row.get('stock_quantity', '').strip()
+                if stock_str:
+                    try:
+                        stock_quantity = int(stock_str)
+                    except ValueError:
+                        raise ValueError("stock_quantity must be an integer")
+
+                reorder_level = 10
+                reorder_str = row.get('reorder_level', '').strip()
+                if reorder_str:
+                    try:
+                        reorder_level = int(reorder_str)
+                    except ValueError:
+                        raise ValueError("reorder_level must be an integer")
+
+                unit = row.get('unit', 'piece').strip().lower()
+                unit_mapping = {
+                    'pcs': 'piece', 'pc': 'piece', 'pieces': 'piece',
+                    'kg': 'kilogram', 'g': 'gram',
+                    'l': 'liter', 'ml': 'milliliter',
+                    'pack': 'pack', 'box': 'box', 'bottle': 'bottle',
+                    'can': 'can', 'carton': 'carton', 'dozen': 'dozen',
+                }
+                unit = unit_mapping.get(unit, unit or 'piece')
+
+                is_active = True
+                active_str = row.get('is_active', 'yes').strip().lower()
+                if active_str in ('no', 'n', '0', 'false'):
+                    is_active = False
+
+                # Check if product exists
+                existing = db.query(Product).filter(
+                    Product.store_id == current.store_id,
+                    Product.sku == sku,
+                ).first()
+
+                if existing:
+                    if not update_existing:
+                        result['skipped'] += 1
+                        continue
+
+                    # Update existing product
+                    existing.name = name
+                    existing.barcode = barcode
+                    existing.itemcode = itemcode
+                    existing.description = description
+                    existing.category_id = category_id
+                    existing.supplier_id = supplier_id
+                    existing.selling_price = selling_price
+                    existing.cost_price = cost_price
+                    existing.vat_exempt = vat_exempt
+                    existing.tax_code = tax_code
+                    existing.reorder_level = reorder_level
+                    existing.unit = unit
+                    existing.is_active = is_active
+                    existing.updated_at = datetime.utcnow()
+                    db.add(existing)
+                    result['updated'] += 1
+                else:
+                    # Create new product
+                    product = Product(
+                        store_id=current.store_id,
+                        sku=sku,
+                        barcode=barcode,
+                        itemcode=itemcode,
+                        name=name,
+                        description=description,
+                        category_id=category_id,
+                        supplier_id=supplier_id,
+                        selling_price=selling_price,
+                        cost_price=cost_price,
+                        vat_exempt=vat_exempt,
+                        tax_code=tax_code,
+                        stock_quantity=stock_quantity,
+                        reorder_level=reorder_level,
+                        unit=unit,
+                        is_active=is_active,
+                        created_at=datetime.utcnow(),
+                        updated_at=datetime.utcnow(),
+                    )
+                    db.add(product)
+
+                    # Apply initial stock movement if quantity > 0
+                    if stock_quantity > 0:
+                        _apply_stock_movement(
+                            db,
+                            product,
+                            stock_quantity,
+                            "purchase",
+                            store_id=current.store_id,
+                            notes="Initial stock from CSV import",
+                            performed_by=current.id,
+                        )
+
+                    result['created'] += 1
+
+            except ValueError as e:
+                result['errors'].append(f"Row {row_num}: {str(e)}")
+                result['skipped'] += 1
+            except Exception as e:
+                result['errors'].append(f"Row {row_num}: Unexpected error - {str(e)}")
+                result['skipped'] += 1
+
+        # Commit changes
+        db.commit()
+
+        # Invalidate cache
+        await cache.invalidate_prefix(f"products:list:{current.store_id}")
+
+        result['summary'] = (
+            f"Imported {result['created']} new products, "
+            f"updated {result['updated']} existing, "
+            f"skipped {result['skipped']} rows"
+        )
+
+        # Write audit trail
+        _write_audit(
+            db,
+            current,
+            "csv_import",
+            "bulk_product_import",
+            after={
+                "created": result['created'],
+                "updated": result['updated'],
+                "total": result['total_rows'],
+            },
+            notes=f"CSV import: {result['summary']}",
+        )
+        db.commit()
+
+        return result
+
+    except Exception as e:
+        result = {
+            'success': False,
+            'total_rows': 0,
+            'created': 0,
+            'updated': 0,
+            'skipped': 0,
+            'errors': [f"File processing error: {str(e)}"],
+            'summary': f"Import failed: {str(e)}",
+        }
+        db.rollback()
+        return result

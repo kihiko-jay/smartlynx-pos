@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { procurementAPI } from "../../api/client";
+import { procurementAPI, getToken } from "../../api/client";
 import { MONO, SYNE, SAND, BONE, MUTED, AMBER, GREEN, RED, fmtKES } from "./styles";
 import { Card, Btn, Badge, Err, Loading } from "./UIComponents";
 
@@ -33,14 +33,35 @@ export default function GRNView({ grnId, onBack }) {
 
   const downloadGRNPDF = async (grn, mode) => {
     try {
+      const token = getToken();
+      if (!token) {
+        setErr("Authentication required. Please log in again.");
+        return;
+      }
+      
       const url = `/api/v1/procurement/grns/${grn.id}/pdf?download=${mode === "download"}`;
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate PDF: ${response.status} ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      
       if (mode === "download") {
         const a = document.createElement("a");
-        a.href = url;
+        a.href = URL.createObjectURL(blob);
         a.download = `GRN-${grn.grn_number}.pdf`;
         a.click();
+        URL.revokeObjectURL(a.href);
       } else {
-        window.open(url, "_blank");
+        const pdfUrl = URL.createObjectURL(blob);
+        window.open(pdfUrl, "_blank");
       }
     } catch(e) {
       setErr(`Failed to generate PDF: ${e?.message || e}`);
@@ -66,15 +87,15 @@ export default function GRNView({ grnId, onBack }) {
       </div>
       <Err msg={err} />
 
-      {grn.status === "draft" && (
-        <div style={{ marginBottom: 16, display: "flex", gap: 8 }}>
+      <div style={{ marginBottom: 16, display: "flex", gap: 8 }}>
+        {grn.status === "draft" && (
           <Btn variant="success" onClick={post} disabled={acting}>
             {acting ? "Posting…" : "Post GRN — Update Stock"}
           </Btn>
-          <Btn variant="secondary" onClick={() => downloadGRNPDF(grn, "download")}>⬇ Download PDF</Btn>
-          <Btn variant="secondary" onClick={() => downloadGRNPDF(grn, "print")}>🖨 Print</Btn>
-        </div>
-      )}
+        )}
+        <Btn variant="secondary" onClick={() => downloadGRNPDF(grn, "download")}>⬇ Download PDF</Btn>
+        <Btn variant="secondary" onClick={() => downloadGRNPDF(grn, "print")}>🖨 Print</Btn>
+      </div>
       {grn.posted_at && (
         <div
           style={{
