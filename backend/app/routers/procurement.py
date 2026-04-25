@@ -237,9 +237,16 @@ def get_purchase_order_pdf(
       download=true  (default)  — User downloads the PDF file
       download=false            — Browser displays/prints the PDF
     """
+    from app.models.subscription import Store
+    
     po = svc._get_po(db, po_id, current.store_id)
     if not po:
         raise HTTPException(status_code=404, detail="PO not found")
+    
+    # Fetch store details from database
+    store = db.query(Store).filter(Store.id == current.store_id).first()
+    if not store:
+        raise HTTPException(status_code=500, detail="Store not found")
     
     # Convert ORM model to dict for PDF service
     po_dict = _po_out(po)
@@ -253,11 +260,12 @@ def get_purchase_order_pdf(
             "phone_number": po.supplier.phone,
         }
     
-    # Generate PDF
+    # Generate PDF with real store details
+    store_location = store.location or settings.STORE_LOCATION
     pdf_bytes = pdf_service.generate_po_pdf(
         po_dict,
-        store_name=settings.STORE_NAME,
-        store_location=settings.STORE_LOCATION,
+        store_name=store.name,
+        store_location=store_location,
         supplier_payment_terms="Net 14 days",
     )
     
@@ -459,11 +467,18 @@ def get_grn_pdf(
       download=false            — Browser displays/prints the PDF
     """
     from app.models.procurement import GoodsReceivedNote
+    from app.models.subscription import Store
+    
     grn = db.query(GoodsReceivedNote).filter(GoodsReceivedNote.id == grn_id).first()
     if not grn:
         raise HTTPException(status_code=404, detail="GRN not found")
     if grn.store_id != current.store_id:
         raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Fetch store details from database
+    store = db.query(Store).filter(Store.id == current.store_id).first()
+    if not store:
+        raise HTTPException(status_code=500, detail="Store not found")
     
     # Convert ORM model to dict for PDF service
     grn_dict = _grn_out(grn)
@@ -488,11 +503,12 @@ def get_grn_pdf(
         if checker_emp:
             grn_dict["checker"] = {"display_name": checker_emp.full_name}
     
-    # Generate PDF
+    # Generate PDF with real store details
+    store_location = store.location or settings.STORE_LOCATION
     pdf_bytes = pdf_service.generate_grn_pdf(
         grn_dict,
-        store_name=settings.STORE_NAME,
-        store_location=settings.STORE_LOCATION,
+        store_name=store.name,
+        store_location=store_location,
     )
     
     filename = f"GRN-{grn.grn_number}.pdf"

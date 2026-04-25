@@ -81,7 +81,7 @@ def _validate_startup_configuration() -> None:
 from app.routers import (
     auth, products, transactions, reports, mpesa,
     etims, subscription, audit, sync, ws, platform, procurement, accounting, employees,
-    reconciliation, returns, customers, expenses, cash_sessions,
+    reconciliation, returns, customers, expenses, cash_sessions, store,
 )
 
 setup_logging()
@@ -272,6 +272,7 @@ app.add_middleware(APIVersionMiddleware)
 
 PREFIX = "/api/v1"
 app.include_router(auth.router,             prefix=PREFIX)
+app.include_router(store.router,            prefix=PREFIX, dependencies=[Depends(api_rate_limiter)])
 app.include_router(products.router,         prefix=PREFIX, dependencies=[Depends(api_rate_limiter)])
 app.include_router(customers.router,        prefix=PREFIX, dependencies=[Depends(api_rate_limiter)])
 app.include_router(transactions.router,     prefix=PREFIX, dependencies=[Depends(api_rate_limiter)])
