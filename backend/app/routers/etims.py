@@ -30,6 +30,7 @@ from sqlalchemy import text
 from app.core.deps import get_db, require_cashier, require_manager
 from app.models.employee import Employee, Role
 from app.models.transaction import Transaction, TransactionStatus
+from app.models.subscription import Store
 from app.models.audit import AuditTrail
 from app.services.etims import submit_invoice
 
@@ -179,7 +180,11 @@ async def submit_to_etims(
 
     # Attempt #1 — inline (fast path for good connectivity)
     attempt = _get_etims_attempt_count(db, txn.txn_number) + 1
-    result  = await submit_invoice(_txn_to_data(txn))
+    
+    # Fetch the store for per-store credential resolution
+    store = db.query(Store).filter(Store.id == txn.store_id).first()
+    
+    result  = await submit_invoice(_txn_to_data(txn), store=store)
 
     txn.etims_invoice_no = result["etims_invoice_no"]
     txn.etims_qr_code    = result["etims_qr_code"]
@@ -285,7 +290,10 @@ async def retry_all_unsynced(
         for txn in batch:
             attempt = _get_etims_attempt_count(db, txn.txn_number) + 1
             try:
-                result = await submit_invoice(_txn_to_data(txn))
+                # Fetch the store for per-store credential resolution
+                store = db.query(Store).filter(Store.id == txn.store_id).first()
+                
+                result = await submit_invoice(_txn_to_data(txn), store=store)
                 txn.etims_invoice_no = result["etims_invoice_no"]
                 txn.etims_qr_code    = result["etims_qr_code"]
                 txn.etims_synced     = result["etims_synced"]
@@ -345,7 +353,10 @@ async def _schedule_etims_retry(txn_id: int):
                     txn.txn_number, delay, attempts + 1, txn.store_id)
         await asyncio.sleep(delay)
 
-        result = await submit_invoice(_txn_to_data(txn))
+        # Fetch the store for per-store credential resolution
+        store = db.query(Store).filter(Store.id == txn.store_id).first()
+        
+        result = await submit_invoice(_txn_to_data(txn), store=store)
         txn.etims_invoice_no = result["etims_invoice_no"]
         txn.etims_qr_code    = result["etims_qr_code"]
         txn.etims_synced     = result["etims_synced"]

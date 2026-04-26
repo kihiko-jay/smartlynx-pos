@@ -22,7 +22,9 @@ the retry scheduler pick it up later.
 
 import logging
 import httpx
+from typing import Optional
 from app.core.config import settings
+from app.core.encryption import decrypt_value
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +77,7 @@ def _build_item_payload(item: dict) -> dict:
 _FAILED_RESULT = {"etims_invoice_no": None, "etims_qr_code": None, "etims_synced": False}
 
 
-async def submit_invoice(txn_data: dict) -> dict:
+async def submit_invoice(txn_data: dict, store=None) -> dict:
     """
     Submit a completed sale to KRA eTIMS and return the invoice number + QR URL.
 
@@ -84,6 +86,8 @@ async def submit_invoice(txn_data: dict) -> dict:
             txn_number (str), total (Decimal|float), vat_amount (Decimal|float),
             created_at (datetime), items (list of dicts with product_name, qty,
             unit_price, line_total, discount)
+        store: Optional Store ORM object to read per-store eTIMS credentials from.
+               If not provided or credentials incomplete, falls back to global settings.
 
     Returns:
         dict with:
@@ -93,11 +97,47 @@ async def submit_invoice(txn_data: dict) -> dict:
 
     This function NEVER raises. Any exception -> returns _FAILED_RESULT.
     """
+    # ─────────────────────────────────────────────────────────────────
+    # STEP 1: Resolve credentials — per-store or global fallback
+    # ─────────────────────────────────────────────────────────────────
+    pin = None
+    branch = None
+    serial = None
+
+    # Check for per-store credentials first
+    if store and store.has_etims_credentials:
+        try:
+            pin = decrypt_value(store.etims_pin)
+            branch = store.etims_branch_id or "00"
+            serial = decrypt_value(store.etims_device_serial)
+            logger.debug(
+                "Using per-store eTIMS credentials for store_id=%s",
+                store.id,
+            )
+        except Exception as exc:
+            logger.error(
+                "Failed to decrypt per-store eTIMS credentials for store_id=%s: %s",
+                store.id, exc,
+            )
+            return _FAILED_RESULT
+    else:
+        # Fall back to global settings
+        pin = settings.ETIMS_PIN
+        branch = settings.ETIMS_BRANCH_ID
+        serial = settings.ETIMS_DEVICE_SERIAL
+        if store:
+            logger.debug(
+                "Using global eTIMS credentials (store_id=%s has no per-store config)",
+                store.id,
+            )
+
     # 1. Skip entirely if eTIMS is not configured (dev / unconfigured store)
-    if not settings.ETIMS_PIN:
+    if not pin:
+        txn_num = txn_data.get("txn_number", "unknown")
+        store_id = store.id if store else "unknown"
         logger.warning(
-            "eTIMS not configured -- skipping submission for %s",
-            txn_data.get("txn_number", "unknown"),
+            "eTIMS not configured for store_id=%s -- skipping submission for txn=%s",
+            store_id, txn_num,
         )
         return _FAILED_RESULT
 
@@ -106,8 +146,8 @@ async def submit_invoice(txn_data: dict) -> dict:
 
     # 3. Build the KRA VSCU payload
     payload = {
-        "tpin":         settings.ETIMS_PIN,
-        "bhfId":        settings.ETIMS_BRANCH_ID,
+        "tpin":         pin,
+        "bhfId":        branch,
         "invcNo":       txn_data["txn_number"],
         "salesDt":      txn_data["created_at"].strftime("%Y%m%d"),
         "totTaxblAmt":  round(float(txn_data["total"]) - float(txn_data["vat_amount"]), 2),
@@ -126,8 +166,8 @@ async def submit_invoice(txn_data: dict) -> dict:
                 f"{base_url}/vscu/req",
                 json=payload,
                 headers={
-                    "bhfId":        settings.ETIMS_BRANCH_ID,
-                    "dvcSrlNo":     settings.ETIMS_DEVICE_SERIAL,
+                    "bhfId":        branch,
+                    "dvcSrlNo":     serial,
                     "Content-Type": "application/json",
                 },
             )

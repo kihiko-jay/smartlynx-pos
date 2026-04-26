@@ -211,11 +211,17 @@ def generate_grn_pdf(
     # Items received
     elements.extend(build_section_header("ITEMS RECEIVED"))
     items_rows = []
+    subtotal = Decimal("0")
     for item in grn_dict.get("items", []):
         # Handle both old nested "product" structure and new flat structure
         product = item.get("product", {})
         product_name = product.get("product_name") if product else None
         product_name = product_name or item.get("product_name", "N/A")
+        
+        line_total = item.get("line_total", Decimal("0"))
+        if isinstance(line_total, str):
+            line_total = Decimal(line_total)
+        subtotal += line_total
         
         items_rows.append([
             product_name,
@@ -224,14 +230,26 @@ def generate_grn_pdf(
             str(item.get("damaged_qty_base", 0)),
             str(item.get("rejected_qty_base", 0)),
             str(item.get("accepted_qty_base", 0)),
+            f"{format_currency(item.get('cost_per_base_unit', 0))}",
+            f"{format_currency(line_total)}",
         ])
     
     if items_rows:
         elements.extend(build_items_table(
-            headers=["Product", "Qty (purc.)", "Received", "Damaged", "Rejected", "Accepted"],
+            headers=["Product", "Qty (purc.)", "Received", "Damaged", "Rejected", "Accepted", "Unit Price", "Total"],
             rows=items_rows,
-            col_widths=[40, 25, 20, 20, 20, 20],
+            col_widths=[40, 22, 16, 16, 16, 16, 25, 25],
         ))
+    
+    # Totals section - calculate from items
+    tax_amount = subtotal * Decimal("0.16")
+    total_amount = subtotal + tax_amount
+    totals_data = [
+        ("Subtotal", format_currency(subtotal)),
+        ("Tax (16%)", format_currency(tax_amount)),
+        ("Total Amount", format_currency(total_amount)),
+    ]
+    elements.extend(build_totals_section(totals_data))
     
     # Batch info section (if available)
     batch_items = [item for item in grn_dict.get("items", []) if item.get("batch_number")]

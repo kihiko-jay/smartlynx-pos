@@ -67,6 +67,12 @@ class Store(Base):
     mpesa_callback_url    = Column(String(300), nullable=True)
     mpesa_till_number     = Column(String(20), nullable=True)   # Alternative to shortcode
 
+    # eTIMS Configuration (per-store)
+    etims_enabled       = Column(Boolean, default=False, nullable=False)
+    etims_pin           = Column(String(200), nullable=True)   # encrypted at rest
+    etims_branch_id     = Column(String(10),  nullable=True)   # e.g. "00"
+    etims_device_serial = Column(String(200), nullable=True)   # encrypted at rest
+
     # Metadata
     is_active     = Column(Boolean, default=True)
     created_at    = Column(DateTime(timezone=True), server_default=func.now())
@@ -97,6 +103,16 @@ class Store(Base):
             return self.sub_ends_at is None or self.sub_ends_at > now
 
         return False
+
+    @property
+    def has_etims_credentials(self) -> bool:
+        """
+        Check if this store has configured all required eTIMS credentials.
+        
+        Returns True only if etims_enabled is True AND both etims_pin and
+        etims_device_serial are set (not None and not empty).
+        """
+        return bool(self.etims_enabled and self.etims_pin and self.etims_device_serial)
 
     @property
     def plan_label(self) -> str:
