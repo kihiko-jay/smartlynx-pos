@@ -81,6 +81,7 @@ def _make_employee(db, store, role="admin"):
         email=f"emp_{uuid.uuid4().hex[:6]}@test.com",
         password=hash_password("pass123"),
         role=Role(role), is_active=True,
+        user_name=f"user_{uuid.uuid4().hex[:8]}",
     )
     db.add(e); db.flush()
     return e

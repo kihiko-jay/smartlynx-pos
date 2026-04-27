@@ -19,7 +19,7 @@ today_summary() endpoint now reflects:
 """
 
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Query, Header
+from fastapi import APIRouter, Depends, HTTPException, Query, Header, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import func, cast, Date, case
 from typing import List, Optional
@@ -189,6 +189,7 @@ def _line_net_and_vat(
 @router.post("", response_model=TransactionOut)
 def create_transaction(
     payload:          TransactionCreate,
+    background_tasks: BackgroundTasks,
     db:               Session  = Depends(get_db),
     current:          Employee = Depends(require_role(Role.CASHIER)),
     idempotency_key:  Optional[str] = Header(None, alias="Idempotency-Key"),
@@ -421,6 +422,13 @@ def create_transaction(
         _accounting_post_transaction(db, txn, txn_items)
         db.commit()
         db.refresh(txn)
+
+        # Auto-submit to KRA eTIMS in background — never blocks the sale
+        try:
+            from app.routers.etims import _auto_submit_etims_for_txn
+            background_tasks.add_task(_auto_submit_etims_for_txn, txn.id)
+        except Exception as _etims_err:
+            logger.warning("Could not schedule eTIMS background task: %s", _etims_err)
 
         logger.info("Transaction created", extra={
             "txn_number": txn.txn_number,

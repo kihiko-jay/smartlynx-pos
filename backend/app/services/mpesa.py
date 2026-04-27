@@ -197,12 +197,12 @@ def verify_mpesa_callback_signature(body: bytes, signature_header: str | None) -
     Single canonical implementation — imported by both app/routers/mpesa.py and
     app/routers/subscription.py. Any change here applies to both callbacks.
 
-    If MPESA_WEBHOOK_SECRET is not set, verification is skipped for backward
-    compatibility — nginx IP allowlisting is assumed as the outer guard.
+    To disable signature verification and rely solely on nginx IP allowlisting,
+    leave MPESA_WEBHOOK_SECRET empty in .env. Do NOT set it to a placeholder.
     """
     secret = settings.MPESA_WEBHOOK_SECRET
-    if not secret:
-        return True  # No secret configured — rely on IP allowlisting
+    if not secret or "CHANGE_ME" in secret:
+        return True  # No valid secret configured — rely on IP allowlisting
     if not signature_header:
         _sig_logger.warning("M-PESA callback received without signature header")
         return False

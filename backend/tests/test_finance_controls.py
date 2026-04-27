@@ -75,6 +75,7 @@ def _make_employee(db, store, role):
         password=hash_password("pass"),
         role=role,
         is_active=True,
+        user_name=f"user_{uuid.uuid4().hex[:8]}",
     )
     db.add(emp); db.flush(); db.refresh(emp)
     return emp

@@ -77,6 +77,18 @@ def _validate_startup_configuration() -> None:
             raise RuntimeError("NODE_ROLE must be store_server or hq_cloud")
         if settings.is_multi_branch and settings.NODE_ROLE == "store_server" and not settings.BRANCH_CODE:
             raise RuntimeError("BRANCH_CODE must be set for multi-branch store_server deployments")
+        # Guard against unrotated encryption key placeholder.
+        if not settings.SECRET_ENCRYPTION_KEY or "CHANGE_ME" in settings.SECRET_ENCRYPTION_KEY:
+            raise RuntimeError(
+                "SECRET_ENCRYPTION_KEY must be set to a valid 64-character hex string in production. "
+                "Generate one with: openssl rand -hex 32"
+            )
+    # Guard against unrotated encryption key placeholder.
+    if settings.SECRET_ENCRYPTION_KEY and "CHANGE_ME" in settings.SECRET_ENCRYPTION_KEY:
+        raise RuntimeError(
+            "SECRET_ENCRYPTION_KEY still contains a placeholder value. "
+            "Generate a real key with: openssl rand -hex 32"
+        )
 
 from app.routers import (
     auth, products, transactions, reports, mpesa,
@@ -223,7 +235,10 @@ async def lifespan(app: FastAPI):
     verify_db_connection()
 
     # Clean up any M-PESA transactions left PENDING from a previous run
-    await _cleanup_stale_mpesa()
+    try:
+        await _cleanup_stale_mpesa()
+    except Exception as _cleanup_err:
+        logger.warning("Stale M-PESA cleanup skipped at startup: %s", _cleanup_err)
 
     sync_key = os.getenv("SYNC_AGENT_API_KEY", "")
     if sync_key and sync_key != "disabled":

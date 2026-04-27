@@ -38,7 +38,6 @@ class POItemCreate(BaseModel):
     ordered_qty_purchase: Decimal = Field(..., gt=0)
     purchase_unit_type: str = "unit"
     units_per_purchase: int = Field(1, gt=0)
-    unit_cost: Decimal = Field(..., ge=0)
     notes: Optional[str] = None
 
     @model_validator(mode="after")
@@ -133,7 +132,6 @@ class GRNItemCreate(BaseModel):
     units_per_purchase: int = Field(1, gt=0)
     damaged_qty_base: int = Field(0, ge=0)
     rejected_qty_base: int = Field(0, ge=0)
-    cost_per_base_unit: Decimal = Field(..., ge=0)
     batch_number: Optional[str] = None
     expiry_date: Optional[date] = None
     notes: Optional[str] = None

@@ -267,13 +267,16 @@ def create_po(db: Session, payload: POCreate, actor: Employee) -> PurchaseOrder:
         # Look up product by itemcode
         product = _get_product_by_itemcode(db, item_data.itemcode, store_id)
         
+        # Fetch cost_price from product master data
+        unit_cost = product.cost_price or Decimal("0.00")
+        
         base_qty = resolve_base_units(
             db, product.id,
             item_data.ordered_qty_purchase,
             item_data.purchase_unit_type,
             item_data.units_per_purchase,
         )
-        line_total = (Decimal(str(base_qty)) * item_data.unit_cost).quantize(Decimal("0.01"))
+        line_total = (Decimal(str(base_qty)) * unit_cost).quantize(Decimal("0.01"))
         
         db.add(PurchaseOrderItem(
             purchase_order_id    = po.id,
@@ -282,7 +285,7 @@ def create_po(db: Session, payload: POCreate, actor: Employee) -> PurchaseOrder:
             purchase_unit_type   = item_data.purchase_unit_type,
             units_per_purchase   = item_data.units_per_purchase,
             ordered_qty_base     = base_qty,
-            unit_cost            = item_data.unit_cost,
+            unit_cost            = unit_cost,
             line_total           = line_total,
             notes                = item_data.notes,
         ))
@@ -315,13 +318,16 @@ def update_po(db: Session, po_id: int, payload: POUpdate, actor: Employee) -> Pu
             # Look up product by itemcode
             product = _get_product_by_itemcode(db, item_data.itemcode, actor.store_id)
             
+            # Fetch cost_price from product master data
+            unit_cost = product.cost_price or Decimal("0.00")
+            
             base_qty = resolve_base_units(
                 db, product.id,
                 item_data.ordered_qty_purchase,
                 item_data.purchase_unit_type,
                 item_data.units_per_purchase,
             )
-            line_total = (Decimal(str(base_qty)) * item_data.unit_cost).quantize(Decimal("0.01"))
+            line_total = (Decimal(str(base_qty)) * unit_cost).quantize(Decimal("0.01"))
             db.add(PurchaseOrderItem(
                 purchase_order_id    = po.id,
                 product_id           = product.id,
@@ -329,7 +335,7 @@ def update_po(db: Session, po_id: int, payload: POUpdate, actor: Employee) -> Pu
                 purchase_unit_type   = item_data.purchase_unit_type,
                 units_per_purchase   = item_data.units_per_purchase,
                 ordered_qty_base     = base_qty,
-                unit_cost            = item_data.unit_cost,
+                unit_cost            = unit_cost,
                 line_total           = line_total,
                 notes                = item_data.notes,
             ))
@@ -428,6 +434,9 @@ def create_grn(db: Session, payload: GRNCreate, actor: Employee) -> GoodsReceive
         # Look up product by itemcode
         product = _get_product_by_itemcode(db, line.itemcode, store_id)
 
+        # Fetch cost_price from product master data
+        cost_per_base_unit = product.cost_price or Decimal("0.00")
+
         base_qty = resolve_base_units(
             db, product.id,
             line.received_qty_purchase,
@@ -441,7 +450,7 @@ def create_grn(db: Session, payload: GRNCreate, actor: Employee) -> GoodsReceive
                 f"cannot exceed received base qty ({base_qty})")
 
         line_total = (
-            Decimal(str(base_qty)) * line.cost_per_base_unit
+            Decimal(str(base_qty)) * cost_per_base_unit
         ).quantize(Decimal("0.01"))
 
         db.add(GoodsReceivedItem(
@@ -454,7 +463,7 @@ def create_grn(db: Session, payload: GRNCreate, actor: Employee) -> GoodsReceive
             received_qty_base      = base_qty,
             damaged_qty_base       = line.damaged_qty_base,
             rejected_qty_base      = line.rejected_qty_base,
-            cost_per_base_unit     = line.cost_per_base_unit,
+            cost_per_base_unit     = cost_per_base_unit,
             line_total             = line_total,
             batch_number           = line.batch_number,
             expiry_date            = line.expiry_date,

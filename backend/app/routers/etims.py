@@ -93,7 +93,7 @@ def _txn_to_data(txn: Transaction) -> dict:
         "txn_number": txn.txn_number,
         "total":      txn.total,
         "vat_amount": txn.vat_amount,
-        "created_at": txn.created_at,
+        "created_at": txn.completed_at or txn.created_at,
         "items": [
             {
                 "sku":          item.sku,
@@ -139,6 +139,103 @@ def _get_etims_attempt_count(db: Session, txn_number: str) -> int:
         {"txn_number": txn_number},
     ).scalar()
     return int(row or 0)
+
+
+# ── Auto-submission helper (for background/programmatic use) ──────────────────
+
+async def _auto_submit_etims_for_txn(txn_id: int) -> None:
+    """
+    Standalone async helper to submit a transaction to KRA eTIMS.
+
+    Does NOT raise exceptions — all errors are logged and swallowed.
+    This allows the function to be called from background tasks or other
+    services without disrupting the main operation.
+
+    Creates its own database session to avoid issues with stale/closed sessions
+    from FastAPI's dependency lifecycle. Intended for background task execution.
+
+    - Fetches the transaction; returns silently if not found
+    - Skips if status != COMPLETED (silent return)
+    - Skips if already synced (idempotency — silent return)
+    - Calls submit_invoice with per-store credentials
+    - Writes results back to transaction
+    - Records audit trail attempt
+    - Commits to database
+
+    Args:
+        txn_id: Transaction.id to submit
+    """
+    from app.database import SessionLocal
+
+    db = SessionLocal()
+    try:
+        txn = db.query(Transaction).filter(Transaction.id == txn_id).first()
+        if not txn:
+            logger.warning("_auto_submit_etims_for_txn: txn_id=%s not found", txn_id)
+            return
+
+        # Skip if not completed
+        if txn.status != TransactionStatus.COMPLETED:
+            logger.debug(
+                "_auto_submit_etims_for_txn: txn_id=%s status=%s (not COMPLETED), skipping",
+                txn_id, txn.status,
+            )
+            return
+
+        # Skip if already synced (idempotency)
+        if txn.etims_synced:
+            logger.debug(
+                "_auto_submit_etims_for_txn: txn_id=%s already synced, skipping",
+                txn_id,
+            )
+            return
+
+        # Fetch the store for per-store credential resolution
+        store = db.query(Store).filter(Store.id == txn.store_id).first()
+        if not store:
+            logger.warning(
+                "_auto_submit_etims_for_txn: store_id=%s not found for txn_id=%s",
+                txn.store_id, txn_id,
+            )
+            return
+
+        # Submit to eTIMS
+        result = await submit_invoice(_txn_to_data(txn), store=store)
+
+        # Write results back to transaction
+        txn.etims_invoice_no = result["etims_invoice_no"]
+        txn.etims_qr_code    = result["etims_qr_code"]
+        txn.etims_synced     = result["etims_synced"]
+
+        # Record attempt in audit trail
+        attempt = _get_etims_attempt_count(db, txn.txn_number) + 1
+        _record_etims_attempt(db, txn, result, attempt=attempt)
+
+        # Persist changes
+        db.commit()
+
+        # Log outcome
+        if result["etims_synced"]:
+            logger.info(
+                "_auto_submit_etims_for_txn: success txn_id=%s txn_number=%s "
+                "invoice_no=%s store_id=%s",
+                txn_id, txn.txn_number, result["etims_invoice_no"], txn.store_id,
+            )
+        else:
+            logger.warning(
+                "_auto_submit_etims_for_txn: submission failed txn_id=%s "
+                "txn_number=%s store_id=%s (will retry)",
+                txn_id, txn.txn_number, txn.store_id,
+            )
+
+    except Exception as exc:
+        logger.error(
+            "_auto_submit_etims_for_txn: exception txn_id=%s — %s: %s",
+            txn_id, type(exc).__name__, str(exc),
+            exc_info=True,
+        )
+    finally:
+        db.close()
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────

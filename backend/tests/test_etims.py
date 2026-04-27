@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, patch, MagicMock
 from datetime import datetime
 from decimal import Decimal
 
-from app.services.etims import submit_invoice
+from app.services.etims import submit_invoice, _build_item_payload
 
 
 # ── Shared test fixture ───────────────────────────────────────────────────────
@@ -31,6 +31,112 @@ SAMPLE_TXN = {
         }
     ],
 }
+
+
+# ── Item Payload Builder Tests ──────────────────────────────────────────────────
+
+def test_build_item_payload_standard_rate():
+    """
+    Test Fix 1: Standard-rated item with VAT-exclusive line_total.
+    
+    Given:
+      - line_total = 100.00 (VAT-exclusive net)
+      - vat_rate = 0.16
+    
+    Expected:
+      - taxblAmt = 100.00 (the taxable amount)
+      - taxAmt = 16.00 (VAT on the exclusive amount)
+      - splyAmt = 116.00 (VAT-inclusive supply amount)
+    """
+    with patch("app.services.etims.settings") as mock_settings:
+        mock_settings.VAT_RATE = 0.16
+
+        item = {
+            "product_name": "Maize Meal 2kg",
+            "qty": 1,
+            "unit_price": Decimal("100.00"),
+            "line_total": Decimal("100.00"),
+            "discount": Decimal("0.00"),
+            "vat_exempt": False,
+            "tax_code": "B",
+        }
+
+        result = _build_item_payload(item)
+
+        assert result["taxblAmt"] == 100.00, f"Expected taxblAmt=100.00, got {result['taxblAmt']}"
+        assert result["taxAmt"] == 16.00, f"Expected taxAmt=16.00, got {result['taxAmt']}"
+        assert result["splyAmt"] == 116.00, f"Expected splyAmt=116.00, got {result['splyAmt']}"
+        assert result["taxTyCd"] == "B"
+
+
+def test_build_item_payload_exempt():
+    """
+    Test Fix 1: VAT-exempt item (vat_exempt=True).
+    
+    Given:
+      - line_total = 50.00
+      - vat_exempt = True
+    
+    Expected:
+      - taxblAmt = 50.00
+      - taxAmt = 0.0
+      - splyAmt = 50.00 (no VAT added)
+      - taxTyCd = "E"
+    """
+    with patch("app.services.etims.settings") as mock_settings:
+        mock_settings.VAT_RATE = 0.16
+
+        item = {
+            "product_name": "Exempt Service",
+            "qty": 1,
+            "unit_price": Decimal("50.00"),
+            "line_total": Decimal("50.00"),
+            "discount": Decimal("0.00"),
+            "vat_exempt": True,
+            "tax_code": "B",
+        }
+
+        result = _build_item_payload(item)
+
+        assert result["taxblAmt"] == 50.00, f"Expected taxblAmt=50.00, got {result['taxblAmt']}"
+        assert result["taxAmt"] == 0.0, f"Expected taxAmt=0.0, got {result['taxAmt']}"
+        assert result["splyAmt"] == 50.00, f"Expected splyAmt=50.00, got {result['splyAmt']}"
+        assert result["taxTyCd"] == "E"
+
+
+def test_build_item_payload_zero_rated():
+    """
+    Test Fix 1: Zero-rated item (tax_code='Z').
+    
+    Given:
+      - line_total = 200.00
+      - tax_code = "Z"
+    
+    Expected:
+      - taxblAmt = 200.00
+      - taxAmt = 0.0
+      - splyAmt = 200.00 (no VAT added)
+      - taxTyCd = "Z"
+    """
+    with patch("app.services.etims.settings") as mock_settings:
+        mock_settings.VAT_RATE = 0.16
+
+        item = {
+            "product_name": "Export Goods",
+            "qty": 5,
+            "unit_price": Decimal("40.00"),
+            "line_total": Decimal("200.00"),
+            "discount": Decimal("0.00"),
+            "vat_exempt": False,
+            "tax_code": "Z",
+        }
+
+        result = _build_item_payload(item)
+
+        assert result["taxblAmt"] == 200.00, f"Expected taxblAmt=200.00, got {result['taxblAmt']}"
+        assert result["taxAmt"] == 0.0, f"Expected taxAmt=0.0, got {result['taxAmt']}"
+        assert result["splyAmt"] == 200.00, f"Expected splyAmt=200.00, got {result['splyAmt']}"
+        assert result["taxTyCd"] == "Z"
 
 
 # ── 1. Skip when unconfigured ─────────────────────────────────────────────────

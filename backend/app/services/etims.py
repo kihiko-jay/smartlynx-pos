@@ -22,6 +22,7 @@ the retry scheduler pick it up later.
 
 import logging
 import httpx
+from decimal import Decimal
 from typing import Optional
 from app.core.config import settings
 from app.core.encryption import decrypt_value
@@ -33,38 +34,46 @@ def _build_item_payload(item: dict) -> dict:
     """
     Build a single KRA item dict from a transaction item snapshot.
 
-    Fix 3: VAT divisor derived from settings.VAT_RATE (not hardcoded 1.16).
+    Fix 1: line_total is already VAT-exclusive (net amount).
+           taxblAmt should be set to line_total directly.
+           taxAmt should be calculated as: line_total * vat_rate using Decimal.
+           splyAmt (supply amount) is the VAT-inclusive total: taxblAmt + taxAmt.
+
+    Fix 3: VAT rate derived from settings.VAT_RATE (not hardcoded 1.16).
     Fix 4: taxTyCd read from the item's tax_code/vat_exempt snapshot so
            zero-rated and exempt goods file correctly with KRA.
     """
-    vat_multiplier = float(settings.VAT_RATE)          # e.g. 0.16
-    vat_divisor    = 1.0 + vat_multiplier               # e.g. 1.16
-
-    line_total = float(item["line_total"])
+    vat_rate = Decimal(str(settings.VAT_RATE))  # e.g., Decimal("0.16")
+    line_total = Decimal(str(item["line_total"]))
 
     # Determine the KRA tax type code from the item snapshot.
     # B = standard rate, E = VAT-exempt, Z = zero-rated.
     if item.get("vat_exempt"):
-        tax_ty_cd  = "E"
-        taxbl_amt  = line_total
-        tax_amt    = 0.0
+        tax_ty_cd = "E"
+        taxbl_amt = round(float(line_total), 2)
+        tax_amt = 0.0
+        sply_amt = round(float(line_total), 2)
     else:
-        raw_code   = (item.get("tax_code") or "B").upper()
+        raw_code = (item.get("tax_code") or "B").upper()
         if raw_code == "Z":
             tax_ty_cd = "Z"
-            taxbl_amt = line_total
-            tax_amt   = 0.0
+            taxbl_amt = round(float(line_total), 2)
+            tax_amt = 0.0
+            sply_amt = round(float(line_total), 2)
         else:
             # Standard rate (code "B" or anything else)
+            # line_total is already VAT-exclusive (net)
             tax_ty_cd = "B"
-            taxbl_amt = round(line_total / vat_divisor, 2)
-            tax_amt   = round(line_total - taxbl_amt, 2)
+            taxbl_amt = round(float(line_total), 2)
+            tax_amt_decimal = line_total * vat_rate
+            tax_amt = round(float(tax_amt_decimal), 2)
+            sply_amt = round(float(line_total + tax_amt_decimal), 2)
 
     return {
         "itemNm":   item["product_name"],
         "qty":      item["qty"],
         "prc":      round(float(item["unit_price"]), 2),
-        "splyAmt":  round(line_total, 2),
+        "splyAmt":  sply_amt,
         "dcAmt":    round(float(item.get("discount", 0)), 2),
         "taxblAmt": taxbl_amt,
         "taxAmt":   tax_amt,

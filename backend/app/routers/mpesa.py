@@ -17,6 +17,7 @@ import hmac
 import logging
 import os
 from datetime import datetime, timezone
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
@@ -38,7 +39,7 @@ router = APIRouter(prefix="/mpesa", tags=["M-PESA"])
 
 class STKPushRequest(BaseModel):
     phone: str
-    amount: float
+    amount: Decimal
     txn_number: str
 
 
